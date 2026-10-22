@@ -145,13 +145,14 @@ New features follow the same rule: enforce on the server at the moment of the ch
 7. [Remote access](#-remote-access)
 8. [Users and permissions](#-users-and-permissions) — including [two-factor sign-in](#two-factor-sign-in)
 9. [Photos](#-photos)
-10. [Notifications](#-notifications)
-11. [Configuration](#-configuration)
-12. [Updates](#-updates)
-13. [Backup and restore](#-backup-and-restore)
-14. [Troubleshooting](#-troubleshooting)
-15. [Platform notes](#-platform-notes)
-16. [Security](#-security)
+10. [Chat](#-chat)
+11. [Notifications](#-notifications)
+12. [Configuration](#-configuration)
+13. [Updates](#-updates)
+14. [Backup and restore](#-backup-and-restore)
+15. [Troubleshooting](#-troubleshooting)
+16. [Platform notes](#-platform-notes)
+17. [Security](#-security)
 
 ---
 
@@ -822,7 +823,7 @@ the server (a Bluetooth speaker in the kitchen, a USB headset in the workshop, t
 machine's own speakers and microphone) from a phone or computer anywhere, over the
 same connection as everything else (it works through Quick Tunnels).
 
-**Rooms.** An admin names a device or two once: *Kitchen* = this speaker (what
+**Rooms.** Someone with the Intercom permission names a device or two once: *Kitchen* = this speaker (what
 people talk to) + that microphone (what they listen to). A room can have just a
 speaker (announcements) or just a microphone (a baby monitor). After that anyone
 with the Intercom permission simply picks a room.
@@ -834,11 +835,11 @@ with the Intercom permission simply picks a room.
   is muted for you so you don't hear yourself.
 - **Many conversations at once.** Different rooms are independent. Within one
   speaker only one person talks at a time; the second person is told who has it,
-  and an Admin can take it over.
+  and anyone with the Intercom permission can take it over.
 - **No "start a call" step.** The page connects when it opens and reconnects by
   itself; the microphone is only requested the first time you talk.
 
-**Setting up** (Admins; open *Set up devices and Bluetooth* on the page). The
+**Setting up** (anyone with the Intercom permission; open *Set up devices and Bluetooth* on the page). The
 check at the top lists what is missing and how to fix it, with commands you can copy.
 Every speaker and microphone the system offers is listed with a *Play a beep* /
 *Check level* test, so you know it is the right one. To add a Bluetooth speaker or
@@ -872,7 +873,7 @@ makes it skip ahead rather than lag. Nothing is recorded or written to disk.
 Talking and pairing are in the activity log.
 
 Access is per user and off by default; revoking it ends a live session immediately.
-Setting up (rooms, tests, Bluetooth) needs an Admin as well as the permission. The
+Everything about the intercom (rooms, tests, speakers and microphones, pairing, connecting and forgetting Bluetooth devices, taking over the speaker) is open to whoever has the permission, guests included. Nobody has it until the Super User turns it on. The
 microphone needs HTTPS, or `localhost`, in the browser.
 
 **Linux** works best with PipeWire (`sudo apt install pipewire pipewire-audio
@@ -1114,6 +1115,24 @@ signs it out. Access Control also holds:
   dashboard tunnel is released; anything that couldn't start is listed with the reason. A tile you switched back on by hand
   during the emergency is left as you set it.
 
+### Feature switches
+
+**Access Control > Features** (Super User only) is a small box with a **Manage features** button. It opens a popup that lists every
+switchable part of Void OS by category, like attaching and detaching modules. Tick what should be on and untick what should be off:
+the popup marks each change and says how many are **unsaved**, and nothing happens until you press **Confirm changes**. A review
+step shows what will be detached (with a warning where it matters, for example tunnels), then a short loading, then it is done.
+The features are: **Chat**, **Intercom**, **Photos**, **Share links**, **Network drive (WebDAV)**,
+**Cloud storage and sync**, **External and network drives**, **Containers**, **App Store**, **Tunnels**, **Terminal**,
+**Android app** and **Google push**.
+
+A feature that is **off** is detached for everybody, you included, right away and without a restart: its buttons, pages and
+settings cards disappear in every open tab and in the Android app, every address that belongs to it (pages, the API, live
+connections, public `/p/` and `/s/` links) answers "turned off", and what it had running is stopped (open terminals and
+intercom connections are closed, cloud sync pauses, tunnels are shut down; a warning says so first). Nothing is deleted: messages,
+photos, links and files stay exactly where they are and are back when you switch the feature on. What is off is remembered
+across restarts, and switching one off or on is written to the activity log. Signing in, Files, Settings, Access Control,
+Sessions, updates and Panic have no switch, so there is always a way back. **Turn everything back on** resets all of them.
+
 ### Live enforcement
 
 Permission changes apply instantly to people who are signed in: their rank badge
@@ -1200,6 +1219,32 @@ Timeline with a scrubber; full-screen viewer with swipe, zoom, video, **live and
 - Video thumbnails need the browser to decode the video; HEIC pictures show as a placeholder in browsers that cannot decode them unless the optional `Pillow` package makes thumbnails on the server.
 
 ---
+
+## 💬 Chat
+
+Everyone with an account can message everyone else: a direct chat with one person, or a group of three or more. Open **Chat**
+in the sidebar, tap the pencil, and pick someone. It looks and works like Telegram: your chats on the left (one screen at a time
+on a phone), bubbles with tails, ticks that turn blue when the other person has read it, "typing…", unread counts on the
+sidebar button, and new messages that arrive by themselves without a refresh.
+
+- **Messages.** Text with the same light formatting as notifications (`**bold**`, `*italic*`, `` `code` ``, lists, quotes,
+  links, `:emoji:` codes) and `||spoilers||`, which show the same dissolving noise Sessions uses to hide IP addresses until
+  you tap them (previews and notifications never show spoiler text). Reply to a message, react with an emoji, edit your own
+  (it says "edited"), or delete it for everyone. **Right-click** a message (or **long-press** it on a phone) for the menu.
+- **Pictures, videos and files.** Pick them from your device, paste or drop them, or attach a file from your Void OS files.
+  A file that comes from your device is saved in **your own Files folder, under `chats`** (it stays yours; deleting the
+  message does not delete the file). A file you pick from Void OS is only referenced, never copied. Either way, only the people
+  in that chat can open it through the chat. Pictures open in a viewer you can pinch, drag and swipe.
+- **Groups.** Anyone in a group can rename it and add people; its owner (or the Super User) can remove people and delete it
+  for everyone; anyone can leave. People added later do not see what was said before.
+- **Deleting.** *Delete chat* removes it for you only (it comes back, empty, if someone writes again); *Clear history* empties
+  it for you; the Super User or a group's owner can *Delete for everyone*.
+- **Notifications.** A message nobody has read within about 20 seconds becomes one bell notification per chat (and a phone
+  notification in the Android app) with an **Open chat** button. Mute a chat from its menu.
+- **Who can read what.** Each person sees only the chats they are in. **The Super User can read every chat on this server**
+  (a second tab, *Everyone*, lists them; they open read-only, and opening someone else's chat is recorded in the activity log).
+  The Super User can also delete any message. Nobody else, including other admins, can. Tell the people on your server.
+- **Limits.** 20 messages per 10 seconds per person, 4,000 characters per message, up to 10 attachments per message.
 
 ## 🔔 Notifications
 

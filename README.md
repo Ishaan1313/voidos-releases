@@ -1227,6 +1227,11 @@ in the sidebar, tap the pencil, and pick someone. It looks and works like Telegr
 on a phone), bubbles with tails, ticks that turn blue when the other person has read it, "typing…", unread counts on the
 sidebar button, and new messages that arrive by themselves without a refresh.
 
+- **Profile pictures.** Everyone can set one in **Settings > Account > Profile**; it shows in Chat and in the user list. The file you
+  send is never kept: it is opened as a picture, cut to a square, shrunk to 256 pixels and saved again as a brand-new small WebP, so
+  no hidden data (GPS position, camera, appended code) survives, and anything that is not really a JPEG, PNG, WebP or GIF (an SVG,
+  an HTML file renamed .png, a decompression bomb) is refused. Pictures are only shown to signed-in people, never publicly; you
+  can remove yours, an admin can remove anyone's, and deleting an account deletes its picture.
 - **Messages.** Text with the same light formatting as notifications (`**bold**`, `*italic*`, `` `code` ``, lists, quotes,
   links, `:emoji:` codes) and `||spoilers||`, which show the same dissolving noise Sessions uses to hide IP addresses until
   you tap them (previews and notifications never show spoiler text). Reply to a message, react with an emoji, edit your own

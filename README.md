@@ -84,20 +84,6 @@ Every option is listed by `bash "scripts/install.sh" --help` / `.\install.ps1 -H
 
 <sub>Plus <b>Horizon</b> (blue); <b>Void</b> (purple) is the default. Pick yours in <i>Settings → Appearance</i>.</sub>
 
-#### The logo
-
-The logo is a black hole: a dark event horizon, a ring of light around it and the accretion disc bending past it.
-It is drawn once as an SVG and **takes the colour of your theme** (purple on Void, green on Emerald, and so on), so
-it always matches the rest of the interface. Purple is the primary version, used wherever a fixed file is needed
-(`static/logo.svg`, the app icon, the README).
-
-- **Sign-in, setup, share links and the 404 page** show the icon alone.
-- **Settings** shows the full logo with the *Void OS* wordmark.
-- **The browser tab icon** is larger and has no box around it. Its ring is light in a dark browser theme and dark in a
-  light one, so it stays readable on either tab bar.
-- **The 404 page** (and the "server is offline" page of the Cloudflare Worker example) uses the black hole as its 0:
-  stars bend and swirl around it, and clicking it, or a button, sends a shockwave through them.
-
 <img src="docs/screenshots/settings-appearance.png" alt="Settings: appearance" width="700">
 
 ---
@@ -376,8 +362,11 @@ Files folder and remembers its id. While that marker isn't readable and matching
 unplugged and only an empty mount point is left, or a different drive is mounted there), the Files
 routes, uploads, trash, share links, WebDAV, USB/network-share mounting and cloud sync all answer
 *"The storage drive isn't present"* and do nothing, instead of writing onto the system disk in the
-drive's place. A red bar shows across the page, the admins get a notification, and cloud syncs are
-paused (not deleted). When the drive is back, everything resumes by itself, with no restart. Accounts,
+drive's place. A red bar shows across the page and cloud syncs are paused (not deleted) at once. The admins
+are only **notified if the drive is still missing after 45 seconds** (`VOID_ROOT_GRACE_S`), so a drive that Void OS
+or the system mounts a moment after start-up is not announced at all. If it was announced, that error is taken
+down when the drive returns and "The storage drive is back" replaces it. When the drive is back, everything resumes
+by itself, with no restart. Accounts,
 settings and logs live in the Void OS folder, so Void OS itself keeps running. The folder has to be
 writable by the Void OS user for the marker to be created (without one, no check is done).
 Docker apps whose data is under the Files folder are not stopped.
@@ -409,7 +398,7 @@ with `--without office`; Windows: `-Without office`, installed with winget; on m
 On an existing Linux install run
 `sudo apt install --no-install-recommends libreoffice-impress libreoffice-writer libreoffice-calc fonts-liberation`
 (or your distro's equivalent). The first open of a file is converted to a PDF on the server (a few seconds,
-one at a time, 2 minutes at most, in a throwaway profile, never with macros) and cached in `tmp/office_pdf`
+one at a time, 2 minutes at most, in a throwaway profile, never with macros) and cached in the temporary folder
 until the file changes (newest 30 kept).
 
 For the fallback, office documents are read on the server with hard limits (60 MB per file, 12 MB
@@ -457,6 +446,8 @@ removes one, *Empty trash* clears everything you can see. Deleting from a USB
 drive or network share is **permanent** (after a confirmation), because copying
 the data into the main drive's bin would be slow and could fill it.
 
+**Delete key.** With files selected, **Delete** moves them to the Recycle Bin (it asks first; protected folders can't be deleted). It does nothing while you are typing in a field.
+
 **Delete permanently.** Select files with **Shift** held (or hold Shift on a selection, or right-click while holding it) and an extra **Delete permanently** button and menu entry appear; **Shift+Delete** does the same. It asks first, then skips the Recycle Bin for good.
 
 **Search** matches file names first, then text inside files (up to 512 KB
@@ -473,9 +464,31 @@ limited so they can't overload the server: 20,000 files and 10 GiB per zip,
 IP at a time, and stalled transfers are dropped. Wrong PIN/password guesses are
 limited per visitor **and** per link: after `VOID_SHARE_LINK_MAX_FAILS` (30)
 wrong guesses from anyone within 10 minutes, that link refuses unlock attempts
-for 5 minutes. Manage links in **Share Links** (expiry, revoke — effective
-immediately). Guests see their own links, admins see their own and Guests', the
+for 5 minutes. Manage links in **Share Links**: **Edit** a link to change its expiry, set, change or remove its
+PIN/password (everyone who had unlocked it is locked out at once) or switch it off for a while without revoking it, and
+**Revoke** it (effective immediately). Guests see their own links, admins see their own and Guests', the
 Super User sees everyone's. Deleting an account removes its links.
+
+**Upload links: let anyone send you files.** In **Share Links** press **+ Upload link** (or **Upload link** in the Files
+toolbar), name it, and send the link to someone. They need no account: the page lets them drop or choose several files and
+whole folders, shows the same progress ring as a download, and keeps the folder structure. **On a phone** (the browser, or
+the Android app) it is a big *Tap to choose files* page that takes **any type of file**, several at once (folders can't be picked
+on a phone, so that button is hidden there). You can write **your own one-line message** for the page (up to 140 characters; without one it says
+"Send files to <you>"), and change it later in Share Links > Edit. What arrives is stored in
+**My Files › Received › the name you gave** and takes space from your own folder (a Guest's quota applies). Options:
+expiry, a PIN or password (same lock-out as every share link), and three limits: **total size** (default 2 GB), **each
+file** (1 GB) and **number of files** (500), never above what the server allows (`VOID_DROP_MAX_GB` 50,
+`VOID_DROP_MAX_FILE_GB` 20, `VOID_DROP_MAX_FILES` 5000). The Share Links page shows how much each link has received, and you
+get one bell (and phone) notification per link while files arrive. Visitors see only their own progress, never your folder or
+what others sent, and cannot download anything through the link. Safety: names are cleaned (no `..`, drive letters,
+hidden Void OS names or Windows device names; at most 8 folders deep), nothing is ever overwritten (a taken name becomes
+`name (2).ext`), files go up in pieces of at most 16 MB (a broken connection resumes; a 2 GB file works through a Quick Tunnel),
+each visitor may have `VOID_DROP_OPEN_PER_IP` (6) files open at once and start `VOID_DROP_BEGIN_PER_MIN` (240) per minute,
+the disk's free-space reserve and the space of uploads still running are checked before each file, a file being received is kept in a
+hidden `.voidput-drop-*.part` file in the destination folder (on the same drive, so finishing is instant and nothing lands on the system disk),
+unfinished uploads are removed after 15 minutes of silence (at once when the visitor presses *Cancel the upload* or closes the page, and any
+leftovers at start-up), two visitors sending the same name get two files, and a revoked, expired, switched-off or re-locked link stops at
+once, in the middle of a file too. If you delete the link's folder, the link stops with "The folder for this link was removed".
 
 **WebDAV.** Map Void OS as a network drive at `/webdav/`:
 
@@ -497,10 +510,19 @@ folder (0 = unlimited). Shared storage and Admins are never limited. Uploads,
 copies, moves and text edits that would exceed it are refused with a clear
 message; Guests see their usage in Settings.
 
-**Temporary files** all go in Void OS's own `tmp/` folder (`VOID_TMP_DIR`),
-never the system temp folder. On Windows that keeps Defender's heavy scanning of
-`%TEMP%` from slowing things down; the installer can add `tmp\` to Defender's
-exclusions.
+**The system disk never fills up with your data.** Everything bulky and disposable is kept on the storage
+drive (your SSD, or the mounted storage you chose as the Files folder), never on the SD card or the folder Void OS runs from:
+uploads in progress (beside where the file is going), zips being built, upload-link files being received, photo and chat
+thumbnails, document previews and Python's own temporary files. They live in a hidden `.voidput-tmp` folder in the storage root
+(`VOID_TMP_DIR` overrides it), which Files, WebDAV, share links, search and zips never show or reach. It is only used once that
+folder is certainly the real storage drive (its `.void-root` marker matches), so if the drive is missing at start-up Void OS
+never creates anything in its place; the Files routes are paused then anyway, and it falls back to the app folder's `tmp/` for
+the few bytes it needs. The app folder's own `tmp/` keeps only Void OS's small working state (update backups, cloud-sync
+bookkeeping, credential files). The logs that anyone on the internet could make grow (the Access Gate's) are capped.
+What is left on the system disk is small and bounded: accounts and settings, the activity log (5,000 entries), the photo and chat
+indexes and wallpapers. Docker's own image storage is not Void OS's: keep it off the SD card yourself (see `data-root` in
+Docker's `daemon.json`).
+On Windows the system temp folder is not used either (Defender's heavy scanning of `%TEMP%` slows things down).
 
 ### Apps and containers
 
@@ -904,8 +926,16 @@ and intercom share one port, so one tunnel covers everything.
   says so and why. A brand-new link can take a minute to start working, and
   your own DNS or firewall can block that check, so open the link from your phone
   to be sure.
-- If cloudflared prints errors instead of connecting, its recent output is shown
-  for troubleshooting.
+- While the tunnel is not connected, a **cloudflared output (for troubleshooting)** box shows whether the process is
+  running, Void OS's own notes (which `cloudflared` it started, its exit code, any other `cloudflared` processes on the
+  machine) and what `cloudflared` printed.
+- Under the dashboard link, **App tunnels** lists every app that has its own tunnel, each with the same tear-open strip and
+  copy button, its live status, and its temporary `trycloudflare.com` address (not the fixed `workers.dev` one that
+  forwards to it).
+
+Void OS learns the address from `cloudflared`'s output **and** from `cloudflared`'s own local status page (the tunnel
+is started with `--metrics` on a free local port), so the status doesn't depend on the output reaching Void OS. After
+updating Void OS, restart it once so the tunnel is started that way (an older `cloudflared` left running keeps its old address).
 
 If the tunnel drops it restarts itself after `CF_RESTART_DELAY` seconds. The
 tunnel targets `127.0.0.1` (not `localhost`), so it works on machines where
@@ -1239,13 +1269,19 @@ sidebar button, and new messages that arrive by themselves without a refresh.
 - **Pictures, videos and files.** Pick them from your device, paste or drop them, or attach a file from your Void OS files.
   A file that comes from your device is saved in **your own Files folder, under `chats`** (it stays yours; deleting the
   message does not delete the file). A file you pick from Void OS is only referenced, never copied. Either way, only the people
-  in that chat can open it through the chat. Pictures open in a viewer you can pinch, drag and swipe.
+  in that chat can open it through the chat. Pictures open in a viewer you can pinch, drag and swipe. Files waiting to be sent sit in their own **attachment tray**
+  above the message box (icon, name, size, upload progress, remove button); in a sent message the attachments are a block of
+  their own with a line between them and the text. Dragging a file over the chat shows a **Drop files to send** overlay.
+  If the sender has since moved or deleted a file from their `chats` folder, it shows as **No longer available** instead of a
+  failed download.
 - **Groups.** Anyone in a group can rename it and add people; its owner (or the Super User) can remove people and delete it
   for everyone; anyone can leave. People added later do not see what was said before.
 - **Deleting.** *Delete chat* removes it for you only (it comes back, empty, if someone writes again); *Clear history* empties
   it for you; the Super User or a group's owner can *Delete for everyone*.
-- **Notifications.** A message nobody has read within about 20 seconds becomes one bell notification per chat (and a phone
-  notification in the Android app) with an **Open chat** button. Mute a chat from its menu.
+- **Notifications.** A message nobody has read within about 3 seconds (`VOID_CHAT_NOTIFY_S`; long enough to batch a burst
+  and to skip someone who has the chat open) becomes a bell notification (and a phone notification in the Android app) with an
+  **Open chat** button. Every new message alerts again. The unread count also shows as a red number on the chat icon when the
+  sidebar is narrow. Mute a chat from its menu.
 - **Who can read what.** Each person sees only the chats they are in. **The Super User can read every chat on this server**
   (a second tab, *Everyone*, lists them; they open read-only, and opening someone else's chat is recorded in the activity log).
   The Super User can also delete any message. Nobody else, including other admins, can. Tell the people on your server.
@@ -1256,22 +1292,26 @@ sidebar button, and new messages that arrive by themselves without a refresh.
 ### The bell
 
 Everyone gets their own transfers (slow successes and every failure), app
-installs and updates, cloud sync failing or recovered, and anything done *to*
+installs and updates, and anything done *to*
 their account (password reset, permission or rank change, a session signed out).
 Admins also get security events (failed sign-ins, blocked cross-site requests,
 Panic, Super User transfer, backup restore, a cleared log), low disk space, and
 failing notification channels. Repeated security events collapse to one item per
 10 minutes.
 
+**Super User only.** *Server started* and *cloud sync failing / recovered* go to the Super User alone, not to every admin
+or to whoever owns the sync (the text says whose sync it is).
+
 **Server started.** Every time Void OS starts (after a power cut, a reboot, an update or a restart from the
-dashboard) admins get a "Server started" notice on every channel they turned on, including ntfy, saying how long
+dashboard) the Super User gets a "Server started" notice on every channel they turned on, including ntfy, saying how long
 the machine itself has been running. A few minutes means the machine just booted, e.g. power came back; a long time
 means only Void OS was restarted. It can be switched off like any other event. A server without power can't send
 anything, so this arrives when it is back, not while it is out.
 
 ### Email, Discord, Telegram and ntfy
 
-**Settings → Notifications**: turn on any channel and choose which events send.
+**Settings → Notifications**: turn on any channel and choose which events send (the channels and the event switches fill the
+width of the page, side by side when there is room).
 Admins can see the settings; the **Super User** changes them and sends test
 messages.
 
@@ -1342,12 +1382,14 @@ place rather than duplicating it.
 | `VOID_ALLOWED_ORIGINS` | — | Other sites allowed to call the API |
 | `VOID_GEOLOCATE` | `on` | `off` stops visitor-IP country lookups |
 | `VOID_CLOUDFLARE_TUNNEL` | `false` | Built-in Quick Tunnel |
+| `VOID_ROOT_GRACE_S` | `45` | Seconds the storage drive may be missing before the admins are notified |
+| `VOID_CHAT_NOTIFY_S` | `3` | Seconds before an unread chat message becomes a notification |
 | `VOID_TERMINAL_ENABLED` | `true` | In-browser terminal |
 | `VOID_WEBDAV_ENABLED` | `true` | WebDAV network drive |
 | `VOID_UI_MODE_DEFAULT` | `classic` | Default interface |
 | `VOID_UPDATES` | `on` | `off` disables updates entirely |
 | `VOID_UPDATE_CHECK` | `true` | Daily automatic update check |
-| `VOID_TMP_DIR` | `tmp` | Temporary-files folder |
+| `VOID_TMP_DIR` | `<Files folder>/.voidput-tmp` | Bulky temporary files (uploads, zips, thumbnails). Setting it puts everything, including Void OS's own working state, there |
 
 Everything else (rate limits, Cloudflare Worker settings, share-link and
 intercom limits…) is in `scripts/.env.example`.
@@ -1362,6 +1404,9 @@ over one gives a clear "too many…" message.
 |---|---|---|
 | `VOID_MAX_DOWNLOADS_PER_USER` | `6` | Downloads and media streams going at once, per account |
 | `VOID_MAX_SHARE_DOWNLOADS_PER_IP` | `2` | Same, per visitor address on a public share link |
+| `VOID_DROP_MAX_GB` / `_MAX_FILE_GB` / `_MAX_FILES` | `50` / `20` / `5000` | The most an upload link can be set to take (total, per file, number of files) |
+| `VOID_DROP_OPEN_PER_IP` / `_OPEN_PER_LINK` / `_OPEN_TOTAL` | `6` / `24` / `120` | Files open at once through upload links, per visitor, per link, in all |
+| `VOID_DROP_BEGIN_PER_MIN` / `VOID_DROP_WRITERS` | `240` / `6` | Files a visitor may start per minute; pieces written at the same time |
 | `VOID_MAX_DOWNLOADS_GLOBAL` | `10` | Same, all together (keeps threads free for pages) |
 | `VOID_MAX_CONTROL_SOCKETS_PER_USER` | `5` | Open browser tabs per account (each holds a live-update connection) |
 | `VOID_MAX_CONTROL_SOCKETS_GLOBAL` | `16` | Same, all accounts together |

@@ -187,8 +187,26 @@ voidos update       # re-run the installer (keeps your data)
 
 `voidos logs` tidies the output: a time column, messages lined up, warnings in
 yellow, errors and tracebacks in red, systemd's own notes dimmed. `voidos logs
---raw` shows the untouched journal. Re-run the installer after an update to get
-the newest copy of the command.
+--raw` shows the untouched journal. Use `voidos logs`, not `journalctl` directly:
+the journal's own lines carry the date, the host name and the process id on every
+line, which is what made the output hard to read.
+
+One request is one line, with the columns lined up and the address last, and the
+status number coloured (green 2xx, cyan 3xx, yellow 4xx, red 5xx):
+
+```
+14:47:03  200  GET       771 B     3 ms  /api/stats
+14:47:03  404  GET       146 B     1 ms  /api/nothing
+14:47:04  500  POST         -    12 ms  /api/boom
+```
+
+The referrer and the browser's name are no longer written (they made every line wrap
+three times over), and each line is printed once (Gunicorn used to print every request
+twice). The `voidos` command is copied to `/usr/local/bin` by the installer; Void OS now
+renews that copy by itself a little after it starts whenever the one in `scripts/` is
+newer, so an update brings the newest `voidos logs` too. If it isn't allowed to write
+there (root owns the folder and there is no passwordless `sudo`) it prints the one
+`sudo install ...` command to run by hand.
 
 After you create the first account, a **setup wizard** asks for every setting in `.env` (basics first, then one optional step per group of advanced settings, then a review). Anything left alone keeps its default.
 

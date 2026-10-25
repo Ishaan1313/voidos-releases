@@ -488,7 +488,7 @@ the disk's free-space reserve and the space of uploads still running are checked
 hidden `.voidput-drop-*.part` file in the destination folder (on the same drive, so finishing is instant and nothing lands on the system disk),
 unfinished uploads are removed after 15 minutes of silence (at once when the visitor presses *Cancel the upload* or closes the page, and any
 leftovers at start-up), two visitors sending the same name get two files, and a revoked, expired, switched-off or re-locked link stops at
-once, in the middle of a file too. If you delete the link's folder, the link stops with "The folder for this link was removed".
+once, in the middle of a file too. If you delete the link's folder, nothing breaks: the next file makes it again (and a file that was arriving is simply sent again). Only revoking, expiring or switching off the link stops it.
 
 **WebDAV.** Map Void OS as a network drive at `/webdav/`:
 
@@ -1002,6 +1002,16 @@ Immich, code-server) work cleanly.
   file: it reserves the space, runs `mkswap` and `swapon`, and adds the line to `/etc/fstab` so it stays after a reboot. It needs root or passwordless `sudo`;
   otherwise the page shows the exact commands to run by hand. Void OS only removes swap files it made. Put the file on an SSD or hard drive, not an SD card.
   Immich in the App Store now has `oom_score_adj` on its containers, so under memory pressure they are stopped before the tunnel or Void OS.
+- **Public link that stays down while the machine is fine.** A temporary tunnel can say "connected" while carrying nothing (its connections to Cloudflare
+  died in a router reconnect or an outage, but `cloudflared` never exited, so nothing restarted it), and a failed push of the new address to the Worker used to be
+  given up on after four tries. Now, if the public link of the dashboard or of an app has not answered for 3 checks in a row (one a minute) while the internet is
+  reachable, `cloudflared` is restarted (at most once every 10 minutes, as Cloudflare limits how fast temporary tunnels may start), and Void OS keeps
+  pushing the current address to the Worker, waiting longer between tries (2 to 15 minutes), until the Worker has it.
+- **Scheduled restart of the machine.** Settings > Updates & backup > *Scheduled restart* (Super User, Linux): once the machine has been running for the hours you
+  pick (12 by default, 2 hours to 30 days) it is restarted by `systemctl reboot`, and Void OS comes back with it (it must start with the machine; the installer
+  sets that up). The time counted is the machine's uptime, which doesn't jump when the clock is corrected after boot, so it can't restart twice in a row. It writes
+  the restart into the Activity Log first, tells the Super User, and waits (at most 30 minutes) while a file is arriving through an upload link. It needs root or
+  passwordless `sudo` (`sudo -n systemctl reboot` must work); without it the switch can't be turned on and the page says why.
 - **Updating the dashboard's own Worker** (e.g. `voidos.you.workers.dev`): Settings > App addresses > *Void OS's own address*. Enter the Worker's name
   and Void OS uploads the current Worker code to it through the connected token. The Worker's variables (the KV binding, `KEY_NAME`, secrets) are kept;
   only the code changes. With *Update it by itself after Void OS updates* on, a newer Worker code is put there shortly after Void OS starts.

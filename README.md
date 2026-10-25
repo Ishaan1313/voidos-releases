@@ -1435,6 +1435,15 @@ chunked uploads, App Store installs and public share downloads per minute.
 Void OS updates from the **GitHub releases** of its repository. Update checks are
 **on by default**.
 
+**The front end in a release is minified; the repository's is not.** In the copy that is built for a release, `static/*.js`,
+`static/*.css`, the scripts and styles inside `templates/*.html` that have no template syntax in them, and the comments in the
+templates are minified with esbuild (comments gone, local names shortened, one line); `static/vendor/`, which is already minified,
+is left alone. The private repository keeps the readable files, and nothing in it is ever changed by the build. The workflow
+installs esbuild and builds with `--web require`, so a release without it fails instead of shipping readable files. Locally,
+`python tools/protect.py . out` minifies when esbuild is installed (`npm i -g esbuild`) and says so when it isn't. What a browser
+downloads can never be fully hidden: this makes it hard to read, not impossible. A side effect: an error reported from the browser
+in a release points to line 1 and a column of `app.js`, not to a line of the readable file.
+
 **Update from the command line.** `scripts/update.py` updates an install without the in-app
 updater (versions 1.0.0 to 1.0.3 fail on *Install* with "HTTP Error 415"). It checks the SHA-256,
 backs up the program files, swaps them, installs the packages and never touches `.env` or your data:

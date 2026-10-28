@@ -1278,6 +1278,71 @@ Timeline with a scrubber; full-screen viewer with swipe, zoom, video, **live and
 
 ---
 
+## ✏️ Draw
+
+A whiteboard for sketches and diagrams, built on the open-source [Excalidraw](https://github.com/excalidraw/excalidraw) editor (MIT licence,
+pinned at one version; a newer one is brought in by hand, tested, and shipped as a normal Void OS update). Open **Draw** in the sidebar,
+or go to `/draw`; it needs a signed-in account and can be switched off in Access Control > Features.
+
+- **Boards.** Everyone has their own boards. Each is a plain `.excalidraw` file in the **Drawings** folder of your own Files folder, so it
+  counts against your space, shows up in Files, can be copied or backed up, and opens in any Excalidraw. Make, rename and delete boards from
+  the **Boards** panel (a deleted board goes to the Recycle Bin and can be restored from there).
+- **Saving.** Automatic, a moment after you stop drawing, and when you leave the page. The corner says *Saved*, *Saving…* or *Not saved*. If a
+  save can't go through (your space is full, the connection dropped) the page keeps your work in the browser and tries again. If the same board
+  was changed from another tab or phone, the two versions are merged instead of one overwriting the other.
+- **Download and restore.** *Download* on a board gives its `.excalidraw` file; *Download all (zip)* gives every board. *Import* takes
+  `.excalidraw` files, or that zip, and brings every board back with its name (up to 500 boards per zip, 64 MB each). Export to PNG or SVG is in
+  the menu.
+- **More shapes.** The **Shapes** button opens a panel with about 70 ready-made shapes in five groups: *Basic* (triangles, pentagon, hexagon, octagon, stars with
+  4, 5, 6 or 8 points, a burst, cross, parallelogram, trapezoid, heart, cloud, cylinder, speech bubble, callout, brackets, curly brace, ring, pill), *Arrows* (block
+  arrows in four directions, double arrow, chevron, pentagon and notched arrows), *Flowchart* (process, decision, start/end, data, document, predefined process,
+  database, connectors and the rest of the standard set), *UML* (actor, class, interface, package, note, component, node, state, lifeline, use case, table) and
+  *Screens* (browser window, phone, button, text field, sticky note). **Make** builds a regular polygon with 3 to 24 sides or a star with 3 to 24 points and the
+  sharpness you choose. Tap a shape to put it in the middle of the screen, or drag it to where you want it (on a computer). A shape takes the colours, fill, line,
+  roughness and edge style currently chosen in the toolbar, shapes that can hold a text get one (switch that off in the panel), several-part shapes arrive grouped, and
+  placing a shape is one undoable step that everyone drawing with you sees. Every shape is made of ordinary Excalidraw elements (closed lines, rectangles, ellipses,
+  diamonds, text), so you can edit its points, resize, restyle, ungroup and export it like anything else, and a drawing with them opens in official Excalidraw too.
+  View-only people don't get the panel.
+- **Drawing together.** Share a board with other people of this server from the **Share** button on it (people are found by name; each is an
+  *editor* or a *viewer*). It shows up for them under **Shared with me** and they get a notification. Everybody who has a board open sees the
+  others draw as it happens: their pointers (with their name and colour), their laser, what they have selected, and a **Follow** option that
+  moves your view with theirs. Viewers can look and point but not change anything. Only the owner can share, rename or delete a board, and what
+  is drawn counts against the owner's space. While people are connected the server keeps the board and writes it back to its file a couple
+  of seconds after every change; if a connection drops (a tunnel restarting, a phone losing signal) the page reconnects by itself, keeps what you
+  drew meanwhile and merges it with what the others did. A heartbeat every 20 seconds keeps the tunnel from closing a quiet connection.
+- **Link for anyone.** In the Share box of a board, *Link for anyone* makes an address that people **without an account** can open (it needs the
+  Share links feature to be on). Each link says whether visitors can **edit** or only **look**, can have a 6-digit **PIN**, and an **expiry**; the
+  Share Links page lists it too (as a *drawing board*) where you can also set a password, switch it off for a while, change what it allows, or
+  revoke it. A visitor picks the name the others see, and from then on draws live exactly like everyone else, with the same limits. A link reaches
+  only that one board: there is no list of boards, no account and no other part of Void OS behind it. Revoking, switching off, expiry, a changed
+  PIN or password, or deleting the board closes the visitors' connections within a couple of seconds (at once when you do it from Share Links).
+  Up to 20 links per board, 8 visitors per link and 4 per visitor address. A link works from outside your home only if you copy it while you are
+  using Void OS through its public address (Settings > Remote access); copied from the address inside your network it only works there.
+- **Undo and redo.** Each person's Ctrl+Z / Ctrl+Y (and the phone's buttons) only reverse their own actions, for every kind of change (drawing,
+  moving, resizing, styling, grouping, duplicating, deleting, order), and the result reaches everyone else like any other edit. Other people's
+  changes never end up on your undo list. Undo history starts empty when you open a board.
+- **Touch and pen.** Fingers, a mouse and a stylus all draw (with pressure); two fingers pan and zoom; the toolbar turns into the phone layout on small
+  screens, with the Saved and Boards buttons in the bottom bar. In the Android app it is the same page.
+- **Big boards.** Drawing, moving around and syncing stay usable with thousands of things on a board, by keeping the work small:
+  *pen strokes* are stored with fewer points when you lift the pen (about 70% fewer, the same look: the thickness a mouse or finger stroke
+  would have had is kept as pressure, so the line is not thinner), and **Make this board lighter…** in the menu does the same for every stroke already
+  on a board (not undoable: download first if you want the original). *Other people's changes* are put on your canvas in groups, with a
+  wait that grows with the size of the board, so a person drawing quickly cannot keep your screen busy; a long stroke you are still drawing is sent a few
+  times a second, and finished at once when you lift the pen. *The server* keeps each element's text ready, so writing a board with 10 000 elements after a
+  small change takes about a tenth of a second instead of one and a half, waits longer between writes the longer a write takes, and leaves out
+  erased things more than a day old when a board is opened. *Snapping to other shapes* is on by default (Alt+S switches it off, and Void OS
+  remembers that), except on boards of 2 500 or more things, where finding what to snap to costs time at every move.
+- **Nothing leaves the server.** The drawing page loads no script, font, image or frame from any other site (its security policy allows none), and
+  the build refuses to publish if a CDN address is left in it.
+
+Limits (environment variables, see `scripts/.env.example`): `VOID_DRAW_MAX_MB` (64, one board), `VOID_DRAW_MAX_BOARDS` (500 per person),
+`VOID_DRAW_LIVE_MAX` (12 people drawing live at once on the whole server; each live connection holds one server thread, so raise it together
+with `VOID_THREADS` and only on a machine that can take it; the 13th person can still draw and save, only the live view is missing).
+Saving from the Android app: files the page builds itself (PNG or SVG export, a saved `.excalidraw`) go to the Downloads folder (app 1.0.13 and later).
+
+The page is built from `modules/draw-app/` (`cd modules/draw-app && npm install && npm run build` writes `static/draw/`). Releases contain the built result, so
+a Pi never needs Node. To move to a newer Excalidraw, change the version in `modules/draw-app/package.json`, rebuild, try it, and release.
+
 ## 💬 Chat
 
 Everyone with an account can message everyone else: a direct chat with one person, or a group of three or more. Open **Chat**

@@ -1281,7 +1281,7 @@ Timeline with a scrubber; full-screen viewer with swipe, zoom, video, **live and
 ## ✏️ Draw
 
 A whiteboard for sketches and diagrams, built on the open-source [Excalidraw](https://github.com/excalidraw/excalidraw) editor (MIT licence,
-pinned at one version; a newer one is brought in by hand, tested, and shipped as a normal Void OS update). Open **Draw** in the sidebar,
+built from its development source at one pinned commit, which has newer tools than the npm package: lasso, bucket fill, draw to shape; a newer commit is brought in by hand, tested, and shipped as a normal Void OS update). Open **Draw** in the sidebar,
 or go to `/draw`; it needs a signed-in account and can be switched off in Access Control > Features.
 
 - **Boards.** Everyone has their own boards. Each is a plain `.excalidraw` file in the **Drawings** folder of your own Files folder, so it
@@ -1323,6 +1323,7 @@ or go to `/draw`; it needs a signed-in account and can be switched off in Access
   changes never end up on your undo list. Undo history starts empty when you open a board.
 - **Touch and pen.** Fingers, a mouse and a stylus all draw (with pressure); two fingers pan and zoom; the toolbar turns into the phone layout on small
   screens, with the Saved and Boards buttons in the bottom bar. In the Android app it is the same page.
+- **Your own shortcuts.** *Keyboard shortcuts…* in the menu lets you choose another key for each tool (Select, Rectangle, Pen, Eraser, Draw to shape and so on). They are saved to your account, so they follow you to every device. The **Share** button in the top bar opens sharing for the board you are on.
 - **Big boards.** Drawing, moving around and syncing stay usable with thousands of things on a board, by keeping the work small:
   *pen strokes* are stored with fewer points when you lift the pen (about 70% fewer, the same look: the thickness a mouse or finger stroke
   would have had is kept as pressure, so the line is not thinner), and **Make this board lighter…** in the menu does the same for every stroke already

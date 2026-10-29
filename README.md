@@ -1331,7 +1331,7 @@ or go to `/draw`; it needs a signed-in account and can be switched off in Access
   (previous / next, Page Up / Page Down, a button for the list of all slides) moves between them; draw, write and use the eraser on any slide. *Export as PowerPoint…* (only on boards that came from a .pptx)
   gives the original file back with your drawing laid over each slide it was drawn on, so the slides' own text stays editable in PowerPoint. *Export as PDF…* makes a page for every slide
   (or one page with everything, on a normal board). Slides look exactly like PowerPoint's when LibreOffice and PyMuPDF are installed on the server (`sudo apt install libreoffice-impress`,
-  `pip install PyMuPDF`); without them a simpler drawing of each slide's text, pictures and plain shapes is used and the page says so. One presentation is turned into pictures at a time
+  `pip install PyMuPDF`); without them a simpler drawing of each slide's text, pictures and plain shapes is used and the page says so. A presentation is sent in pieces of 4 MB (three at a time, each tried again if it fails), so a file larger than a tunnel's 100 MB request limit still arrives; up to 600 MB (`VOID_DRAW_PPTX_MAX_MB`). One presentation is turned into pictures at a time
   (LibreOffice runs at low priority), a slide picture is kept under about 400 KB, and the original .pptx is kept hidden next to the boards (`Drawings/.void-decks`).
 - **Big boards.** Drawing, moving around and syncing stay usable with thousands of things on a board, by keeping the work small:
   *pen strokes* are kept exactly as you drew them (nothing is trimmed or smoothed when you lift the pen), and **Make this board lighter…** in the menu

@@ -1324,6 +1324,9 @@ or go to `/draw`; it needs a signed-in account and can be switched off in Access
 - **Touch and pen.** Fingers, a mouse and a stylus all draw (with pressure); two fingers pan and zoom; the toolbar turns into the phone layout on small
   screens, with the Saved and Boards buttons in the bottom bar. In the Android app it is the same page.
 - **Your own shortcuts.** *Keyboard shortcuts…* in the menu lets you choose another key for each tool (Select, Rectangle, Pen, Eraser, Draw to shape and so on). They are saved to your account, so they follow you to every device. The **Share** button in the top bar opens sharing for the board you are on.
+- **Precise eraser.** The **Erase** button in the top bar (or **W**, or a double-click on the Eraser tool) rubs out only the part of a pen stroke the circle passes over; what is left on each side stays as its own stroke, and one rub is one step for Undo. Its size is set in the panel at the bottom (slider, − / +, four ready sizes, or **[** and **]**) and is remembered.
+- **Your own tool bar.** *Customise the tool bar…* in the menu lets you hide tools and change their order; it is saved to your account. Inside Void OS, Draw hides the sidebar and the top bar so the whiteboard has the whole window; *Back to Void OS* is in Draw's menu.
+- **Zen mode.** *Zen mode* in the menu (or **Z**) hides everything except the drawing, the tool bar and Undo / Redo; two small buttons at the top right fold away the colour and stroke box and leave zen mode. It is remembered in this browser.
 - **Big boards.** Drawing, moving around and syncing stay usable with thousands of things on a board, by keeping the work small:
   *pen strokes* are stored with fewer points when you lift the pen (about 70% fewer, the same look: the thickness a mouse or finger stroke
   would have had is kept as pressure, so the line is not thinner), and **Make this board lighter…** in the menu does the same for every stroke already

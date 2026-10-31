@@ -67,7 +67,12 @@ export default {
     try {
       // Same method, headers and body; fetch() sets Host from the new URL. A short connect timeout makes a dead tunnel
       // show the offline page quickly instead of hanging, and DNS failures land in the catch below.
-      response = await fetch(new Request(upstream.toString(), request), { redirect: "manual", cf: { connectTimeout: 2000 } });
+      const forward = new Request(upstream.toString(), request);
+      // The app sees the tunnel's address as Host, but the browser is on this Worker's address. Apps that refuse a page whose address is not
+      // their Host (Downtify's "Cross-site request refused") accept it when a proxy they trust says which address was really used.
+      forward.headers.set("X-Forwarded-Host", incoming.host);
+      forward.headers.set("X-Forwarded-Proto", incoming.protocol.replace(":", ""));
+      response = await fetch(forward, { redirect: "manual", cf: { connectTimeout: 2000 } });
     } catch (e) {
       return down(env, key, "Void OS isn't reachable right now — it may be restarting.", 503, "unreachable");
     }

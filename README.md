@@ -962,6 +962,14 @@ If the tunnel drops it restarts itself after `CF_RESTART_DELAY` seconds. The
 tunnel targets `127.0.0.1` (not `localhost`), so it works on machines where
 `localhost` resolves to IPv6 first.
 
+### Release signing
+
+Every program zip a release publishes comes with a `<zip>.sig`: an Ed25519 signature over the zip's SHA-256, made in the release workflow
+(`tools/sign_release.py`) with a private key kept as the GitHub secret `RELEASE_SIGNING_KEY`. An install checks the signature of the zip it
+downloaded against the public key built into `modules/updater.py` (`RELEASE_PUBKEY`) and refuses an update whose signature is wrong, even if
+the repository it came from was taken over. A release with no signature is still installed for now and the update's log entry says
+"release not signed". Without the secret the workflow still builds and publishes, unsigned, and prints a warning.
+
 ### A stable address (Cloudflare Worker)
 
 Quick Tunnel addresses change on every restart. For a permanent address, use a

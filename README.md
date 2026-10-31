@@ -397,19 +397,22 @@ something, or a drive is busy), that one folder keeps its old name and
 everything keeps working.
 
 **Opening files.** Click a file to preview it without downloading it. Pictures,
-video, PDFs and text open in a larger window (never bigger than 1240 px wide or
-92% of the screen):
+video, PDFs, ebooks and text open in a larger window (never bigger than 1500 px wide or
+96% of the screen). PDFs, ebooks and Office documents also have an **Open in new tab** button, for the whole of the tab:
 
 | Type | What you get |
 |---|---|
 | Pictures | fit to the window, with the pixel size shown; click to zoom to full size. Pictures over 40 MB are offered as a download instead |
 | Audio | a music player with a flowing wave that moves with the sound |
 | Video, PDF | the browser's own player and viewer |
+| Ebooks (`.epub`, `.mobi`, `.azw`, `.azw3`, `.kf8`, `.fb2`, `.fb2.zip`, `.cbz`) | a reader that looks like a book: two pages side by side with a spine and stacks of pages (one page on a narrow screen), and a page that turns in 3D when you click the edge of a page, press the arrow keys, Page Up/Down or Space, or use the buttons. Contents list, text size, paper (white, sepia, night), typeface, a place-in-the-book slider, and it remembers where you were. Comics (`.cbz`) open page by page without the turning effect |
 | PowerPoint, Word, Excel, OpenDocument (`.pptx`, `.ppt`, `.docx`, `.doc`, `.xlsx`, `.xls`, `.odp`, `.odt`, `.ods`) | with **LibreOffice** on the server: the real layout, fonts, colours and shapes, shown like a PDF. Without it, or if it can't open the file: the words, tables and pictures only (PowerPoint: first 150 slides; Excel: a tab per sheet, 8 sheets, 200 rows, 26 columns) |
 | JSON | a collapsible tree, or the formatted text |
 | CSV / TSV | a table (first 300 rows), or the raw text |
 | Markdown, code, text | rendered or highlighted; **Edit** opens the editor |
 | ZIP and other archives | the list of what's inside |
+
+**Ebook reader.** Books are read in your browser by [foliate-js](https://github.com/johnfactotum/foliate-js) (MIT licence, kept in `static/vendor/foliate`); nothing is converted or sent anywhere. The reader page lives at `/reader?path=…` and needs a signed-in account. A book can carry pictures, fonts and styles but no script at all: the page's security policy refuses every script inside a book. CBR (RAR comics) and DjVu are not supported.
 
 **LibreOffice previews.** The installer adds LibreOffice by default (Linux: the `office` feature, skip it
 with `--without office`; Windows: `-Without office`, installed with winget; on macOS install it yourself).
@@ -1325,7 +1328,7 @@ or go to `/draw`; it needs a signed-in account and can be switched off in Access
   screens, with the Saved and Boards buttons in the bottom bar. In the Android app it is the same page.
 - **Your own shortcuts.** *Keyboard shortcuts…* in the menu lets you choose another key for each tool (Select, Rectangle, Pen, Eraser, Draw to shape and so on). They are saved to your account, so they follow you to every device. The **Share** button in the top bar opens sharing for the board you are on.
 - **Precise eraser.** *Precise eraser* in the tool bar's three-dots list (or **W**, or a double-click on the Eraser tool) rubs out only the part of a pen stroke the circle passes over (the ink it touches, no more); what is left on each side stays as its own stroke, drawn on the very line it was cut from with the thickness it had, so nothing moves or thins, and one rub is one step for Undo. Its size is set in the panel at the bottom (slider, − / +, four ready sizes, or **[** and **]**) and is remembered.
-- **Your own tool bar.** *Customise the tool bar…* in the menu lets you hide tools and change their order; it is saved to your account. Inside Void OS, Draw hides the sidebar and the top bar so the whiteboard has the whole window; *Back to Void OS* is in Draw's menu.
+- **Your own tool bar.** *Customise the tool bar…* in the menu shows the bar as a row of icons: drag a tool to put it where you want it, drag it down into the tray (or press its ✕) to take it out, and tap or drag one from the tray to bring it back. The real bar changes as you go; **Cancel** puts it back. The tools of the three-dots menu (insert image, frame, web embed, draw to shape, laser pointer, bucket fill, lasso, precise eraser, Mermaid) can be placed on the bar too, and the keyboard works as well (arrow keys move the focused tool, Delete removes it). It is saved to your account. Inside Void OS, Draw hides the sidebar and the top bar so the whiteboard has the whole window; *Back to Void OS* is in Draw's menu.
 - **Zen mode.** *Zen mode* in the menu (or **Z**) hides everything except the drawing, the tool bar and Undo / Redo; two small buttons at the top right fold away the colour and stroke box and leave zen mode. It is remembered in this browser.
 - **PowerPoint and PDF.** *Open a PowerPoint…* in the menu (or *Import…* in Boards) turns a .pptx into a board: every slide is a picture in a row, and a strip along the bottom
   (previous / next, Page Up / Page Down, a button for the list of all slides) moves between them; draw, write and use the eraser on any slide. The view is a page: the whole slide fits the screen between the tool bar and the strip and is held there (zoom in to write small, zoom-out stops at the whole slide); to change slides use the strip, its arrows, **Page Up / Page Down**, the **left / right arrow keys** (with nothing selected), a tap at the left or right edge of the slide (Select or Hand tool) or a sideways swipe. The strip also has **Add slide** (a blank one after the one on screen) and **Delete slide**, both in the list of all slides too and undoable, and an eye button that hides the controls while you draw. *Export as PowerPoint…* (only on boards that came from a .pptx)
@@ -1333,6 +1336,10 @@ or go to `/draw`; it needs a signed-in account and can be switched off in Access
   (or one page with everything, on a normal board). Slides look exactly like PowerPoint's when LibreOffice and PyMuPDF are installed on the server (`sudo apt install libreoffice-impress`,
   `pip install PyMuPDF`); without them a simpler drawing of each slide's text, pictures and plain shapes is used and the page says so. A presentation is sent in pieces of 4 MB (three at a time, each tried again if it fails), so a file larger than a tunnel's 100 MB request limit still arrives; up to 600 MB (`VOID_DRAW_PPTX_MAX_MB`). One presentation is turned into pictures at a time
   (LibreOffice runs at low priority), a slide picture is kept under about 400 KB, and the original .pptx is kept hidden next to the boards (`Drawings/.void-decks`).
+- **A PDF or PowerPoint dropped on a board.** Drag a `.pdf` or `.pptx` onto a board (like in Excalidraw) and it becomes **one picture on the board that shows one page at a time**: select it and a small bar under it turns the pages (previous / next, Page Up / Page Down) and downloads the original file again. What you draw on the board stays where it is. Opening a file from **Boards** is different: it makes a board of its own (the slides in a row, above).
+- **Your pen settings follow you.** Stroke and background colours, fill, stroke width and style, roughness, opacity, font, size, alignment, edges, arrow type and arrowheads, the sticky-note colours and the options of the **Shapes** panel are kept in your account (not the browser), so every board in every browser starts with them. (Guests don't keep settings.)
+- **Keep the tool.** The padlock on the tool bar (or **Q**) keeps a tool selected after each shape; it starts on, and switching it off stays off, also after a reload.
+- **Menus stay on screen.** The right-click menu is kept inside the window and scrolls when it is taller than it.
 - **Big boards.** Drawing, moving around and syncing stay usable with thousands of things on a board, by keeping the work small:
   *pen strokes* are kept exactly as you drew them (nothing is trimmed or smoothed when you lift the pen), and **Make this board lighter…** in the menu
   stores every stroke already on a board with fewer points (it can change their shape a little; not undoable: download first if you want the original). *Other people's changes* are put on your canvas in groups, with a

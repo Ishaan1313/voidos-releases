@@ -1359,15 +1359,16 @@ or go to `/draw`; it needs a signed-in account and can be switched off in Access
   small change takes about a tenth of a second instead of one and a half, waits longer between writes the longer a write takes, and leaves out
   erased things more than a day old when a board is opened. *Snapping to other shapes* is on by default (Alt+S switches it off, and Void OS
   remembers that), except on boards of 2 500 or more things, where finding what to snap to costs time at every move.
-- **Notebooks.** When you make a board (Boards panel > New) you choose **Open canvas** (the endless board above) or **Notebook**: A4 pages one under
-  another, like a PDF or a note-taking app, with the same pen, eraser, lasso, shapes and text. Pages are locked paper (an SVG of the template: blank, lined,
-  grid, dotted, Cornell, checklist or music staves, on white, cream, yellow or blue paper; portrait or landscape) inside a frame that cuts what is drawn at
+- **Notebooks.** When you make a board (Boards panel > New) you choose **Open canvas** (the endless board above) or **Notebook**: pages one under
+  another, like a PDF or a note-taking app, with the same pen, eraser, lasso, shapes and text. Pages are **sized to the screen** the notebook is made on (as wide and as tall as the
+  editor leaves room for, at about the area of an A4 page) unless you pick A4 portrait or A4 landscape; a notebook opens with its first page whole on whatever screen it is opened on. Pages are locked paper (an SVG of the template: blank, lined,
+  grid, dotted, Cornell, checklist or music staves, on white, cream, yellow or blue paper) inside a frame that cuts what is drawn at
   the page's edge; a mark dragged wholly off a page springs back to where it was, and one made only in the grey between two pages is not kept (a short message says so). The bar at the bottom shows *page / pages* with next, previous, **add a page**,
   **pen only** (a finger then moves the page instead of drawing; a pen turns it on by itself) and **all pages** (pictures of every page: tap to go,
   drag to reorder, copy, delete). **More** has *Paper and template* (this page or every page), *Add pages from a PDF or pictures* (each PDF page or picture
   becomes a page to write on; a PDF dropped on a notebook does the same), **Insert space** (press where the space should open and drag down, as in
   Samsung Notes; drag up to take space away), a **Ruler** (move it, turn it with the round handle, centimetres follow the zoom; a pen stroke started beside its
-  edge comes out straight), *Clear this page*, *Delete this page* and *Export as PDF* (an A4 page for each notebook page). A notebook is an ordinary board
+  edge comes out straight), *Clear this page*, *Delete this page* and *Export as PDF*, which asks whether each page goes onto an **A4 sheet** (fitted, upright or on its side) or is exported **as the page is**. A notebook is an ordinary board
   file (its pages are marked in the scene), so it can be shared, opened by link, downloaded and imported like any board. Page Up and Page Down turn the page.
 - **Nothing leaves the server.** The drawing page loads no script, font, image or frame from any other site (its security policy allows none), and
   the build refuses to publish if a CDN address is left in it.

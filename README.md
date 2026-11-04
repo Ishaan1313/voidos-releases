@@ -1359,6 +1359,16 @@ or go to `/draw`; it needs a signed-in account and can be switched off in Access
   small change takes about a tenth of a second instead of one and a half, waits longer between writes the longer a write takes, and leaves out
   erased things more than a day old when a board is opened. *Snapping to other shapes* is on by default (Alt+S switches it off, and Void OS
   remembers that), except on boards of 2 500 or more things, where finding what to snap to costs time at every move.
+- **Notebooks.** When you make a board (Boards panel > New) you choose **Open canvas** (the endless board above) or **Notebook**: A4 pages one under
+  another, like a PDF or a note-taking app, with the same pen, eraser, lasso, shapes and text. Pages are locked paper (an SVG of the template: blank, lined,
+  grid, dotted, Cornell, checklist or music staves, on white, cream, yellow or blue paper; portrait or landscape) inside a frame that cuts what is drawn at
+  the page's edge; a mark dragged wholly off a page springs back to where it was, and one made only in the grey between two pages is not kept (a short message says so). The bar at the bottom shows *page / pages* with next, previous, **add a page**,
+  **pen only** (a finger then moves the page instead of drawing; a pen turns it on by itself) and **all pages** (pictures of every page: tap to go,
+  drag to reorder, copy, delete). **More** has *Paper and template* (this page or every page), *Add pages from a PDF or pictures* (each PDF page or picture
+  becomes a page to write on; a PDF dropped on a notebook does the same), **Insert space** (press where the space should open and drag down, as in
+  Samsung Notes; drag up to take space away), a **Ruler** (move it, turn it with the round handle, centimetres follow the zoom; a pen stroke started beside its
+  edge comes out straight), *Clear this page*, *Delete this page* and *Export as PDF* (an A4 page for each notebook page). A notebook is an ordinary board
+  file (its pages are marked in the scene), so it can be shared, opened by link, downloaded and imported like any board. Page Up and Page Down turn the page.
 - **Nothing leaves the server.** The drawing page loads no script, font, image or frame from any other site (its security policy allows none), and
   the build refuses to publish if a CDN address is left in it.
 
@@ -1585,6 +1595,8 @@ installs without the Super User pressing Install**. Installing:
 4. copies the current program files to `tmp/update/backup-<version>/`, swaps in
    the new ones (undone automatically if anything fails). Only the newest 3 backups are kept; older ones are deleted, and
 5. restarts — anyone using Void OS sees the reconnect screen for a moment.
+
+**Repair** (Settings → Updates → *Repair*, Super User) is for a copy whose files were damaged or edited. *Scan* downloads the signed release of the version that is running (same SHA-256 and signature checks as an update), compares every program file with it and checks that the data files can be read; it changes nothing. *Repair* then puts back every changed or missing program file, moves files that are not part of the release to `tmp/update/repair-<time>/` (nothing is deleted; what it replaced goes there too), restores an unreadable data file from its last good copy (`users.json`, `apps.json`, `shares.json`, `app_stacks.json` and `server_settings.json` keep one as `<name>.bak`) and restarts. A damaged database, or a data file with no good copy, is reported and left alone. A source checkout has no release to compare with, so only the data check runs.
 
 `.env`, accounts, sessions, share links, your files, app data, logs and `.venv`
 are never touched. A new `app_catalog.zip` makes Void OS rebuild the App Store on

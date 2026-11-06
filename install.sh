@@ -677,7 +677,7 @@ else
   UNIT=$(cat <<EOF
 [Unit]
 Description=Void OS home server
-Documentation=file://${VOIDOS_DIR// /%%20}/README.md
+Documentation=https://github.com/Ishaan1313/voidos-releases
 After=network-online.target docker.service
 Wants=network-online.target
 

@@ -36,8 +36,8 @@ from pathlib import Path
 
 REPO = "Ishaan1313/voidos-releases"                # the public releases repository the in-app updater uses
 # What a release may replace. Everything else (your .env, data, .venv, tmp...) is never touched.
-PROGRAM_ENTRIES = {"voidos.py", "VERSION", "requirements.txt", "README.md", "modules", "templates",
-                   "static", "scripts", "first setup", "downloads", "LICENSE", "pyarmor_runtime_000000", "PYTHON_TAG", "app_catalog.zip", ".gitignore", ".gitattributes"}
+PROGRAM_ENTRIES = {"voidos.py", "VERSION", "requirements.txt", "modules", "templates",
+                   "static", "scripts", "first setup", "downloads", "LICENSE", "pyarmor_runtime_000000", "PYTHON_TAG", "app_catalog.zip"}
 MAX_BYTES = 300 * 1024 * 1024
 UA = {"User-Agent": "VoidOS-update-script", "X-GitHub-Api-Version": "2022-11-28"}
 

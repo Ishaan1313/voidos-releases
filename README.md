@@ -56,7 +56,6 @@ Every option is listed by `bash "scripts/install.sh" --help` / `.\install.ps1 -H
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/home-screen.png" alt="Home screen"><br><sub>🏠 <b>Home screen</b> — launcher, search, live server stats and a particle clock</sub></td>
 <td width="50%"><img src="docs/screenshots/files.png" alt="Files"><br><sub>📁 <b>Files</b> — resumable uploads, share links, Recycle Bin, WebDAV, drives</sub></td>
 </tr>
 <tr>
@@ -99,7 +98,7 @@ Every option is listed by `bash "scripts/install.sh" --help` / `.\install.ps1 -H
 | ☁️ **Cloud** | Dropbox and Google Drive: browse, import, export, continuous two-way sync |
 | 🎙️ **Intercom** | Talk to, or listen through, named rooms (speakers and microphones on the server, Bluetooth or not) from anywhere |
 | 👥 **People** | Super User, Admin and Guest ranks, per-permission switches that take effect instantly, sessions, activity log, guest quotas, optional two-factor sign-in |
-| 🎨 **Interface** | Classic (sidebar) or a home screen, five themes, wallpapers |
+| 🎨 **Interface** | Classic sidebar layout (Modern Fluid coming), themes |
 | 🔔 **Notifications** | An in-app bell plus email, Discord and Telegram |
 | 🔄 **Updates** | One click from GitHub releases; app list refreshable on its own |
 
@@ -293,15 +292,10 @@ take effect after a restart, and the wizard offers **Restart now**.
 
 ### The interface
 
-Switch layouts any time in **Settings → Appearance** (*Auto* follows the
-server default, which the Super User can change).
-
-- **Classic** — a sidebar with every section.
-- **Home screen** — a home screen with a clock, CPU / memory / network / storage
-  widgets, **System** icons (Files, App Store, Terminal, Settings…) and your
-  **Apps**. A top bar has an all-apps launcher, global search (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>
-  or <kbd>/</kbd>), and your avatar menu. Right-click or long-press an app tile
-  for Open / Copy link, and Edit / Remove for admins.
+Void OS uses the **Classic** layout, a sidebar with every section. A second
+layout, **Modern Fluid**, is coming and will be chosen in **Settings → Appearance**.
+(The old Home screen layout was removed; accounts that used it open as Classic.)
+Right-click or long-press an app tile for Open / Copy link, and Edit / Remove for admins.
 
 The **Dashboard** opens with a one-line status ("Everything's running…", or the
 specific problem), your app tiles, and a **Server** panel with processor and

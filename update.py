@@ -35,6 +35,81 @@ import zipfile
 from pathlib import Path
 
 REPO = "Ishaan1313/voidos-releases"                # the public releases repository the in-app updater uses
+# Releases are signed (tools/sign_release.py); the in-app updater checks the same signature against the same public key (modules/updater.py).
+# The check is written out here (RFC 8032, pure Python) so this script needs no package that an old, broken install might not have.
+RELEASE_PUBKEY = bytes.fromhex("5627a60b70d4aad31e9f9a834844f9cbf1497cafbad3ca5814aa980192752ce1")
+_SIG_PREFIX = b"voidos-release-v1:"
+_P = 2 ** 255 - 19
+_Q = 2 ** 252 + 27742317777372353535851937790883648493
+_D = -121665 * pow(121666, _P - 2, _P) % _P
+_I = pow(2, (_P - 1) // 4, _P)
+
+
+def _inv(x):
+    return pow(x, _P - 2, _P)
+
+
+def _xrecover(y):
+    xx = (y * y - 1) * _inv(_D * y * y + 1) % _P
+    x = pow(xx, (_P + 3) // 8, _P)
+    if (x * x - xx) % _P:
+        x = x * _I % _P
+    return _P - x if x % 2 else x
+
+
+_BY = 4 * _inv(5) % _P
+_B = (_xrecover(_BY) % _P, _BY)
+
+
+def _padd(a, b):
+    t = _D * a[0] * b[0] * a[1] * b[1]
+    return ((a[0] * b[1] + b[0] * a[1]) * _inv(1 + t) % _P, (a[1] * b[1] + a[0] * b[0]) * _inv(1 - t) % _P)
+
+
+def _pmul(pt, e):
+    out = (0, 1)
+    while e:
+        if e & 1:
+            out = _padd(out, pt)
+        pt = _padd(pt, pt)
+        e >>= 1
+    return out
+
+
+def _pdecode(s):
+    y = int.from_bytes(s, "little")
+    sign, y = y >> 255, y & ((1 << 255) - 1)
+    if y >= _P:
+        raise ValueError("bad point")
+    x = _xrecover(y)
+    if x & 1 != sign:
+        x = _P - x
+    if (-x * x + y * y - 1 - _D * x * x * y * y) % _P != 0:
+        raise ValueError("not on the curve")
+    return (x, y)
+
+
+def ed25519_verify(pub, msg, sig):
+    if len(pub) != 32 or len(sig) != 64:
+        return False
+    try:
+        a, r = _pdecode(pub), _pdecode(sig[:32])
+    except ValueError:
+        return False
+    s = int.from_bytes(sig[32:], "little")
+    if s >= _Q:
+        return False
+    h = int.from_bytes(hashlib.sha512(sig[:32] + pub + msg).digest(), "little") % _Q
+    return _pmul(_B, s) == _padd(r, _pmul(a, h))
+
+
+def verify_release_signature(sha256_hex, sig_b64):
+    import base64
+    try:
+        sig = base64.b64decode(sig_b64.strip(), validate=True)
+    except Exception:
+        return False
+    return ed25519_verify(RELEASE_PUBKEY, _SIG_PREFIX + sha256_hex.lower().encode("ascii"), sig)
 # What a release may replace. Everything else (your .env, data, .venv, tmp...) is never touched.
 PROGRAM_ENTRIES = {"voidos.py", "VERSION", "requirements.txt", "modules", "templates",
                    "static", "scripts", "first setup", "downloads", "LICENSE", "pyarmor_runtime_000000", "PYTHON_TAG", "app_catalog.zip"}
@@ -96,7 +171,7 @@ def latest_release():
     version = tag.lstrip("vV")
     if not re.fullmatch(r"\d+(\.\d+){1,3}", version):
         die(f"The newest release's tag ({tag or 'none'}) isn't a version number.")
-    url, sha, kind = f"https://api.github.com/repos/{REPO}/zipball/{tag}", None, "source"
+    url, sha, kind, chosen = f"https://api.github.com/repos/{REPO}/zipball/{tag}", None, "source", ""
     # protected releases come as one zip per Python version (voidos-<version>-py312.zip): take the one for this Python
     py_tag = f"py{sys.version_info[0]}{sys.version_info[1]}"
     names = [str(a.get("name") or "") for a in data.get("assets") or []]
@@ -114,10 +189,17 @@ def latest_release():
         if (re.fullmatch(r"voidos[-_.\w]*\.zip", name, re.I) and u.scheme == "https" and u.netloc == "github.com"
                 and u.path.startswith(f"/{REPO}/releases/download/")):
             m = re.fullmatch(r"sha256:([0-9a-fA-F]{64})", str(a.get("digest") or ""))
-            url, sha, kind = dl, (m.group(1).lower() if m else None), "asset"
+            url, sha, kind, chosen = dl, (m.group(1).lower() if m else None), "asset", name
             if sha:
                 break
-    return {"version": version, "tag": tag, "url": url, "sha256": sha, "kind": kind}
+    sig_url = ""
+    for a in data.get("assets") or []:
+        if chosen and str(a.get("name") or "") == chosen + ".sig":
+            sdl = str(a.get("browser_download_url") or "")
+            su = urllib.parse.urlparse(sdl)
+            if su.scheme == "https" and su.netloc == "github.com" and su.path.startswith(f"/{REPO}/releases/download/"):
+                sig_url = sdl
+    return {"version": version, "tag": tag, "url": url, "sha256": sha, "kind": kind, "sig_url": sig_url}
 
 
 def main():
@@ -163,6 +245,21 @@ def main():
         if rel["sha256"] and h.hexdigest().lower() != rel["sha256"]:
             raise RuntimeError("The download doesn't match the release's SHA-256. Nothing was changed.")
         say("  Checksum OK" if rel["sha256"] else "  (GitHub gave no checksum for this zip; relying on HTTPS)")
+        # the checksum comes from the same place as the zip; the signature is what proves the release was made by Void OS's own key
+        if rel.get("sig_url"):
+            try:
+                with get(rel["sig_url"], accept="application/octet-stream", timeout=45) as sr:
+                    sig_text = sr.read(4096).decode("ascii", "replace")
+            except Exception as e:
+                raise RuntimeError(f"The release's signature couldn't be downloaded ({e}). Nothing was changed.")
+            if not verify_release_signature(h.hexdigest(), sig_text):
+                raise RuntimeError("This release's signature is not valid: it was not made with Void OS's release key. Nothing was changed.")
+            say("  Signature OK")
+        elif os.environ.get("VOIDOS_ALLOW_UNSIGNED", "").strip().lower() in ("1", "true", "yes"):
+            say("  (this release is not signed; installing it because VOIDOS_ALLOW_UNSIGNED is set)")
+        else:
+            raise RuntimeError("This release is not signed, so it was not installed. Nothing was changed. "
+                               "(Set VOIDOS_ALLOW_UNSIGNED=1 to install an unsigned release anyway.)")
         # 3. unpack safely
         dest = work / "new"
         with zipfile.ZipFile(zpath) as zf:

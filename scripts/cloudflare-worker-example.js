@@ -40,6 +40,7 @@ const SERVER_DOWN = [500, 502, 503, 504, 521, 522, 523, 524, 530, 1016];
 
 export default {
   async fetch(request, env) {
+    if (env.SITE_PREFIX) return site(request, env);      // a public website made by Void OS (see site() below)
     if (env.START_PATH) {
       const at = new URL(request.url);
       if (at.pathname === "/") return Response.redirect(at.origin + env.START_PATH + at.search, 302);
@@ -104,6 +105,69 @@ export default {
     return response;
   },
 };
+
+// A public website (SITE_PREFIX = /site/<id>, SITE_KEY = the secret Void OS made for it). The Worker is the ONLY door to it:
+//   * it can only ever ask for /site/<id>/...: whatever path a visitor types is put behind that prefix, so nobody can reach the dashboard,
+//     its API or any other part of Void OS through a website's address (the URL parser has already resolved ./ and ../ and %2e%2e);
+//   * only GET and HEAD go through (it is a read-only site), and no cookie or Authorization header goes upstream or comes back;
+//   * it proves itself to Void OS with SITE_KEY, and Void OS serves a site to nobody else, so the same files are never reachable on the
+//     dashboard's own address, where a script in a page could act with a signed-in person's cookies.
+async function site(request, env) {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return new Response("This site is read-only.", { status: 405, headers: { Allow: "GET, HEAD", "Content-Type": "text/plain; charset=utf-8" } });
+  }
+  const incoming = new URL(request.url);
+  if (request.url.length > 2000 || incoming.pathname.split("/").length > 42) {                       // no real page has an address like that
+    return new Response("Not found", { status: 414, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+  }
+  const ip = request.headers.get("CF-Connecting-IP") || "";
+  if (env.LIMITER && ip) {                                                                             // Cloudflare's Rate Limiting binding: one address can't hammer the site
+    try {
+      const { success } = await env.LIMITER.limit({ key: ip });
+      if (!success) return new Response("Too many requests. Please slow down a little.", { status: 429, headers: { "Retry-After": "10", "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+    } catch (e) { /* a limiter that can't answer must not take the site down */ }
+  }
+  let target;
+  try { target = await env.TUNNEL.get(env.KEY_NAME || "current"); } catch (e) { return siteDown(); }
+  if (!target) return siteDown();
+  let upstream;
+  try { upstream = new URL(env.SITE_PREFIX + incoming.pathname + incoming.search, target); } catch (e) { return siteDown(); }
+  const headers = new Headers();
+  for (const h of ["Accept", "Accept-Language", "Accept-Encoding", "Range", "If-None-Match", "If-Modified-Since", "If-Range", "User-Agent"]) {
+    const v = request.headers.get(h);
+    if (v) headers.set(h, v);
+  }
+  headers.set("X-Void-Site", env.SITE_KEY || "");
+  headers.set("X-Void-Client-IP", ip);                                                                // (Void OS believes it only because the key above is right)
+  headers.set("X-Forwarded-Host", incoming.host);
+  headers.set("X-Forwarded-Proto", incoming.protocol.replace(":", ""));
+  let response;
+  try {
+    response = await fetch(upstream.toString(), { method: request.method, headers, redirect: "manual", cf: { connectTimeout: 2000 } });
+  } catch (e) { return siteDown(); }
+  if (SERVER_DOWN.includes(response.status)) return siteDown();
+  const out = new Headers(response.headers);
+  out.delete("Set-Cookie");
+  const location = out.get("Location");
+  if (location) {                                      // a redirect inside the site: back to the public address, without the prefix
+    try {
+      const loc = new URL(location, upstream);
+      if (loc.host === upstream.host) {
+        const pre = env.SITE_PREFIX;
+        const path = loc.pathname.startsWith(pre + "/") || loc.pathname === pre ? loc.pathname.slice(pre.length) || "/" : loc.pathname;
+        out.set("Location", incoming.origin + path + loc.search + loc.hash);
+      }
+    } catch (e) { out.delete("Location"); }
+  }
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers: out });
+}
+
+function siteDown() {
+  return new Response("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=robots content=noindex><title>Unavailable</title>" +
+    "<body style='margin:0;min-height:100vh;display:grid;place-items:center;font:16px system-ui,sans-serif;background:#fff;color:#222;text-align:center'>" +
+    "<div style='padding:24px'><h1 style='font-size:20px;margin:0 0 8px'>This site is temporarily unavailable</h1><p style='margin:0;opacity:.7'>Please try again in a little while.</p></div>",
+    { status: 503, headers: { "Content-Type": "text/html; charset=utf-8", "Retry-After": "30", "Cache-Control": "no-store" } });
+}
 
 // The page shown when the tunnel is down. It is the same design as the dashboard's own 404 page: the purple black hole,
 // stars bent and swirled by its gravity, and a shockwave when you click the hole or the button. The status code is the

@@ -601,11 +601,11 @@ function New-Shortcut([string]$path, [string]$target, [string]$arguments, [int]$
   $s = $shell.CreateShortcut($path)
   $s.TargetPath = $target; $s.Arguments = $arguments; $s.WorkingDirectory = $Root
   $s.WindowStyle = $style; $s.Description = $desc
-  $ico = Join-Path $Root 'static\favicon.ico'; if (Test-Path $ico) { $s.IconLocation = $ico }
+  $ico = Join-Path $Root 'static\img\favicon.ico'; if (Test-Path $ico) { $s.IconLocation = $ico }
   $s.Save()
 }
 function New-UrlShortcut([string]$path, [string]$url) {
-  $ico = Join-Path $Root 'static\favicon.ico'
+  $ico = Join-Path $Root 'static\img\favicon.ico'
   $body = "[InternetShortcut]`r`nURL=$url`r`n"
   if (Test-Path $ico) { $body += "IconFile=$ico`r`nIconIndex=0`r`n" }
   [IO.File]::WriteAllText($path, $body)

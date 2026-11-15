@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="static/logo.svg" alt="Void OS logo" width="96">
+<img src="static/img/logo.svg" alt="Void OS logo" width="96">
 
 # Void OS
 
@@ -1184,9 +1184,11 @@ signs it out. Access Control also holds:
 switchable part of Void OS by category, like attaching and detaching modules. Tick what should be on and untick what should be off:
 the popup marks each change and says how many are **unsaved**, and nothing happens until you press **Confirm changes**. A review
 step shows what will be detached (with a warning where it matters, for example tunnels), then a short loading, then it is done.
-The features are: **Chat**, **Intercom**, **Photos**, **Share links**, **Network drive (WebDAV)**,
-**Cloud storage and sync**, **External and network drives**, **Containers**, **App Store**, **Tunnels**, **Terminal**,
-**Android app** and **Google push**.
+The features, by category: **Communication** (Chat, Intercom), **Media** (Photos, Draw), **Writing and notes** (Notes), **Files and sharing** (Share links, which
+include upload links; Websites; Ebook reader and Office preview; Network drive (WebDAV); Cloud storage and sync; External and network
+drives), **Apps and containers** (Containers, App Store), **Remote access** (Tunnels, which include your own domain and the fixed
+workers.dev addresses), **System tools** (Server tuning: power mode, swap, stress test and scheduled reboot; Backup and restore;
+Terminal) and **Phones** (Android app, Google push).
 
 A feature that is **off** is detached for everybody, you included, right away and without a restart: its buttons, pages and
 settings cards disappear in every open tab and in the Android app, every address that belongs to it (pages, the API, live
@@ -1282,6 +1284,75 @@ Timeline with a scrubber; full-screen viewer with swipe, zoom, video, **live and
 - Video thumbnails need the browser to decode the video; HEIC pictures show as a placeholder in browsers that cannot decode them unless the optional `Pillow` package makes thumbnails on the server.
 
 ---
+
+## 📝 Notes
+
+An Obsidian-style notes app inside Void OS (open it from the sidebar, or go to `/notes`). It can be switched off in Access Control > Features (*Writing and notes*).
+
+- **Vaults.** A vault is a folder anywhere in your Files that holds your notes as plain `.md` files, so they open in any other app too; Void OS keeps no second copy.
+  Make one (a new folder somewhere you choose, with the file picker) or open an existing folder, including an Obsidian vault. Vaults are private to the account that made them,
+  and everything in one goes through the same access rules as the Files page, plus a check that nothing leaves the vault folder (no `..`, no link or junction that leads out).
+- **Three views.** *Live Preview* (formatting appears as you type; the Markdown marks come back where the cursor is), *Source mode* and the *Reading view*. Notes save by themselves; if a note
+  was changed somewhere else you choose which version to keep, and earlier versions are kept (at most one every 5 minutes) under *Version history*.
+- **Markdown.** Headings, bold, italic, `==highlight==`, `~~strikethrough~~`, task lists, tables, code blocks with highlighting, footnotes, `$maths$` (KaTeX), Mermaid diagrams, callouts
+  (`> [!tip] Title`, foldable with `+`/`-`), `%%comments%%`, properties (YAML) at the top of a note, and Discord-style spoilers: `||hidden||`, click to reveal.
+- **Linking.** `[[Wikilinks]]` (to a note, a `#heading` or a `#^block`, with aliases) complete as you type; `![[embeds]]` show a note, a section, a picture, audio, video or a canvas;
+  renaming or moving a note updates the links to it. Backlinks (with unlinked mentions), outgoing links, `#tags` (nested), an outline and a graph view (global or local to a note).
+- **Finding things.** Quick switcher (Ctrl+O), command palette (Ctrl+P), search across the vault (`path:` `file:` `tag:` `line:` `-word` `"phrase"` `/regex/`), bookmarks.
+- **Pictures and files** pasted or dropped into a note are saved in the vault wherever the setting says: the vault folder, a fixed folder, next to the note, or in a subfolder next to it.
+- **Canvases are Draw boards.** *Create new canvas* makes a board in your Drawings folder and a small `.canvas` file in the vault that points to it. Opening it takes over the whole window with
+  the full Draw app (its way back returns to Notes); `![[name.canvas]]` shows the board inside a note.
+- **Daily notes and templates** (`{{date}}`, `{{time}}`, `{{title}}`), hotkeys you can change, tabs and splits, and a layout that is remembered per vault.
+- **Obsidian themes and snippets work.** The interface is built on Obsidian's own CSS variable and class names, and Void's look is only their default values. Install a theme from Obsidian's community
+  list (Settings > Appearance > Browse: only the theme's `theme.css` and `manifest.json` are downloaded, from the theme's own GitHub repository), add a `theme.css` of your own, or switch on CSS snippets.
+  They live in the vault's `.obsidian/themes` and `.obsidian/snippets` folders, exactly where Obsidian keeps them. Themes can restyle everything but can't send anything out (the page's policy allows
+  pictures from the vault and the browser only).
+
+Code: the server is `modules/notes.py` (vaults, tree, read/write, index, search, themes); the page is `modules/notes-app/` (CodeMirror 6, markdown-it, KaTeX, Mermaid, d3-force), built with
+`cd modules/notes-app && npm install && npm run build` into `static/notes/` (git-ignored; the release workflow builds it, like Draw).
+
+## 🌐 Websites
+
+Publish a folder from Files as a public website on its own `name.<you>.workers.dev` address. For **Admins and the Super User only** (a guest
+has no Websites page and the API refuses them); it can be switched off in Access Control > Features. It needs your Cloudflare account connected once
+for Workers (Settings > App addresses), the same as every other fixed address.
+
+1. **Websites > + New website**, choose the folder that holds the site (an `index.html` and what it uses) with the file picker, and pick a name.
+2. Void OS makes a small Worker for it and serves the folder's files to that Worker. The page shows the address, a **Preview** (signed in, sandboxed),
+   and lets you pause, change the folder or start page, or delete the site (your files are never touched).
+
+Which folder: a folder of your own **My Files** (not My Files itself), a folder on a connected drive, and, for the Super User, any other folder of the
+files area. **Shared is refused for Admins** (every account can change files there, so anyone could change what the site shows). It is checked again on
+**every visit** against the owner's current account: a folder that moved out of scope, or an owner who lost the rank, stops being served at once.
+
+What keeps it safe:
+
+- **Nothing outside the folder is reachable.** Each step of a path is looked at without following links; a symbolic link or a junction inside the folder is never
+  followed; `..`, backslashes, hidden names (`.git`, `.env`, anything starting with a dot except `.well-known`), Windows device names (`CON`, `NUL` ...), keys, databases and
+  backups (`*.pem`, `*.key`, `*.sqlite`, `*.bak` ...) answer "not found". On Linux and macOS the file is then opened relative to the folder with `O_NOFOLLOW`
+  and the system is asked where the open file really is, so a link swapped in while a request is running changes nothing.
+- **The Worker is the only door.** It can only ask for `/site/<id>/...` (so no path a visitor types reaches the dashboard, its API or any other folder), allows
+  only GET and HEAD, strips cookies both ways, and proves itself with a secret key; Void OS serves a site to nobody else, so the files are never on the dashboard's
+  own address, where a script could act with a signed-in person's cookies. A site's own scripts can only ever reach that site's own folder.
+- **The owner's preview is sandboxed** (`allow-scripts` without `allow-same-origin`): its scripts run as a page with no origin.
+- **Overload.** Per address, the Worker's Cloudflare Rate Limiting binding allows 120 requests per 10 seconds (if the account lacks the binding, the site still
+  goes up and Void OS limits at its end). Void OS also caps requests per address and per site, bytes per site per hour (4 GB) and per address, streams at the same time
+  (never more than a quarter of the server's threads, so the dashboard stays usable), the size of one file (256 MB), and pauses a site for ten minutes, telling its
+  owner, when it gets more than 6000 requests a minute. All of it is in memory and bounded. Tunable with `VOID_SITE_IP_RATE`, `VOID_SITE_RATE`, `VOID_SITE_GB_HOUR`,
+  `VOID_SITE_IP_MB_10MIN`, `VOID_SITE_TRIP`, `VOID_SITE_MAX_FILE_MB`.
+- Cloudflare's Cache API does nothing on `workers.dev`, so sites are not cached at Cloudflare's edge: every visit reaches this machine (the limits above are what protect it).
+
+Clean URLs work (`/about` opens `about.html` or `about/index.html`), a folder without a trailing slash is redirected, `404.html` in the folder is the site's own "not found"
+page, and *single-page app* mode opens the start page for addresses that aren't files.
+
+## 📂 The file picker
+
+Void OS has one "open file" window, built after the Windows one: back / forward / up / refresh, an address bar (each `>` lists that folder's sub-folders, click the empty part to
+type a path), search, New folder / Rename / Delete (to the Recycle Bin), Details / List / Large icons, a preview pane, a right-click menu, resizable columns, rubber-band
+selection, a file name box with suggestions and a file type filter, and the usual keys (arrows, Shift/Ctrl, Enter, Backspace, Alt+Left/Right/Up, F2, F5, Delete,
+Ctrl+L, Ctrl+E, Ctrl+Shift+N, Alt+P). It only shows what the server's own listing gives the signed-in account. **Draw** uses it: *Boards > From Void files...* opens boards,
+zips of boards, PowerPoint and PDF files from anywhere in your Files. The Websites page uses it to choose a folder. Code: `static/ui/void-picker.js` and `.css`, one function,
+`VoidPicker.open({mode: 'file' | 'files' | 'folder', filters, start, ...})`.
 
 ## ✏️ Draw
 

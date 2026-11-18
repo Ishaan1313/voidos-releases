@@ -1287,10 +1287,10 @@ Timeline with a scrubber; full-screen viewer with swipe, zoom, video, **live and
 
 ## 📝 Notes
 
-An Obsidian-style notes app inside Void OS (open it from the sidebar, or go to `/notes`). It can be switched off in Access Control > Features (*Writing and notes*).
+A notes app inside Void OS (open it from the sidebar, or go to `/notes`). It can be switched off in Access Control > Features (*Writing and notes*).
 
 - **Vaults.** A vault is a folder anywhere in your Files that holds your notes as plain `.md` files, so they open in any other app too; Void OS keeps no second copy.
-  Make one (a new folder somewhere you choose, with the file picker) or open an existing folder, including an Obsidian vault. Vaults are private to the account that made them,
+  Make one (a new folder somewhere you choose, with the file picker) or open an existing folder. Vaults are private to the account that made them,
   and everything in one goes through the same access rules as the Files page, plus a check that nothing leaves the vault folder (no `..`, no link or junction that leads out).
 - **Three views.** *Live Preview* (formatting appears as you type; the Markdown marks come back where the cursor is), *Source mode* and the *Reading view*. Notes save by themselves; if a note
   was changed somewhere else you choose which version to keep, and earlier versions are kept (at most one every 5 minutes) under *Version history*.
@@ -1303,9 +1303,9 @@ An Obsidian-style notes app inside Void OS (open it from the sidebar, or go to `
 - **Canvases are Draw boards.** *Create new canvas* makes a board in your Drawings folder and a small `.canvas` file in the vault that points to it. Opening it takes over the whole window with
   the full Draw app (its way back returns to Notes); `![[name.canvas]]` shows the board inside a note.
 - **Daily notes and templates** (`{{date}}`, `{{time}}`, `{{title}}`), hotkeys you can change, tabs and splits, and a layout that is remembered per vault.
-- **Obsidian themes and snippets work.** The interface is built on Obsidian's own CSS variable and class names, and Void's look is only their default values. Install a theme from Obsidian's community
+- **Community themes and snippets work.** The interface is built on standard CSS variable and class names, and Void's look is only their default values. Install a theme from the community
   list (Settings > Appearance > Browse: only the theme's `theme.css` and `manifest.json` are downloaded, from the theme's own GitHub repository), add a `theme.css` of your own, or switch on CSS snippets.
-  They live in the vault's `.obsidian/themes` and `.obsidian/snippets` folders, exactly where Obsidian keeps them. Themes can restyle everything but can't send anything out (the page's policy allows
+  They live in the vault's `.void-notes/themes` and `.void-notes/snippets` folders. Themes can restyle everything but can't send anything out (the page's policy allows
   pictures from the vault and the browser only).
 
 Code: the server is `modules/notes.py` (vaults, tree, read/write, index, search, themes); the page is `modules/notes-app/` (CodeMirror 6, markdown-it, KaTeX, Mermaid, d3-force), built with

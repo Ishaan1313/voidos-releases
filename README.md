@@ -980,8 +980,8 @@ Every time the tunnel gets a new address, Void OS writes it to the KV key
 `current` and the Worker forwards everything there, including WebSockets. If
 Void OS is offline (nothing stored, no answer within 2 seconds, a DNS failure, or a 500/502/503/504/52x/530/1016
 answer from the tunnel) the Worker shows the animated black-hole offline page, which retries by itself every 10 seconds.
-A real 500 from Void OS also shows that page; delete `500` from `SERVER_DOWN` in the Worker if you would rather see
-Void OS's own error and its reference code. Sync status appears in **Settings → Remote access**.
+A real 500 from Void OS that is not JSON also shows that page; delete `500` from `SERVER_DOWN` in the Worker if you would rather see
+Void OS's own error and its reference code. An error Void OS reports as JSON (every API error) is passed on unchanged. Sync status appears in **Settings → Remote access**.
 
 ### A separate tunnel per app
 

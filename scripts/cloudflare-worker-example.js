@@ -24,8 +24,9 @@
  *
  * When the tunnel is down (nothing stored, an invalid address, no answer within 2 seconds, a DNS failure, or one of the
  * "server down" statuses 500/502/503/504/521-524/530/1016) visitors get a friendly offline page that retries by itself
- * instead of a bare error. Note that 500 is included: a genuine 500 from Void OS shows the offline page too; remove 500
- * from SERVER_DOWN below if you would rather see Void OS's own error message with its reference code.
+ * instead of a bare error. Note that 500 is included: a genuine 500 from Void OS that is not JSON shows the offline page too; remove 500
+ * from SERVER_DOWN below if you would rather see Void OS's own error page. An error Void OS reports as JSON (every API error) is passed on
+ * unchanged, so the app can show its reason.
  *
  * Two details matter, or the in-browser Terminal (and any app that uses
  * WebSockets) breaks while everything else seems fine:
@@ -84,7 +85,10 @@ export default {
 
     // When the tunnel itself is down, Cloudflare answers on its behalf with one of these errors (or Void OS answers 500/502/
     // 503/504 while it is restarting). Show the friendly offline page instead of a bare error.
-    if (SERVER_DOWN.includes(response.status)) {
+    // An answer in JSON is Void OS's own (an error it reports with its reason, such as "Couldn't download that theme"), so it is passed on as it is: replacing it
+    // with the offline page hid the reason and showed every failed request as "Request failed (503)". Cloudflare's tunnel errors are never JSON.
+    const own = (response.headers.get("Content-Type") || "").toLowerCase().includes("application/json");
+    if (SERVER_DOWN.includes(response.status) && !own) {
       // 502 from the tunnel = cloudflared is running (so Void OS is) but the app behind it didn't answer
       return down(env, key, "Void OS isn't reachable right now — it may be restarting.", 503, response.status === 502 ? "origin" : "tunnel");
     }

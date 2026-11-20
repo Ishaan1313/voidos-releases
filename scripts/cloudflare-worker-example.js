@@ -1,3 +1,7 @@
+/*!
+ * Void OS - Copyright (c) 2026 Ishaan Patil | corruptedarc. All rights reserved.
+ * Free to use as-is for personal, educational and non-commercial purposes. No modification and no redistribution of modified copies. See the LICENSE file.
+ */
 /**
  * cloudflare-worker-example.js — a stable address for a Void OS Quick Tunnel.
  *

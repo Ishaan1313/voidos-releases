@@ -364,6 +364,36 @@ $StartMenu   = Join-Path ([Environment]::GetFolderPath('Programs')) $AppName
 $DesktopUrl  = Join-Path ([Environment]::GetFolderPath('Desktop')) "$AppName.url"
 $StartupLnk  = Join-Path $StartupDir "$AppName.lnk"
 
+$ScriptsDir = Join-Path $Root 'scripts'
+function Test-FolderOnlyOurs([string]$Dir) {
+  # A folder on PATH runs whatever program is put in it, so it must not be writable by everybody: false when Everyone, Authenticated Users or
+  # the Users group may create or change files there.
+  try {
+    $broad = @('S-1-1-0', 'S-1-5-11', 'S-1-5-4', 'S-1-5-32-545')      # Everyone, Authenticated Users, Interactive (anyone signed in here), Users
+    foreach ($r in (Get-Acl -LiteralPath $Dir -ErrorAction Stop).Access) {
+      if ($r.AccessControlType -ne 'Allow') { continue }
+      $sid = $r.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+      if (($broad -contains $sid) -and (([int]$r.FileSystemRights -band 6) -ne 0)) { return $false }
+    }
+    return $true
+  } catch { return $false }
+}
+
+function Set-VoidosOnPath([bool]$On, [string]$SubKey = 'Environment', [string]$Dir = $ScriptsDir, [bool]$Announce = $true) {
+  # `voidos reset-password ...` from any new terminal window: this folder goes on (or comes off) the user's own PATH (no administrator needed).
+  # Read and written in the registry as an expandable string, so entries such as %USERPROFILE%\bin keep working (SetEnvironmentVariable for 'Path'
+  # would store the value as plain text and break them).
+  $key = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($SubKey)
+  try {
+    $cur = [string]$key.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+    $bs = [char]92
+    $parts = @($cur.Split(';') | Where-Object { $_ -and ($_.TrimEnd($bs) -ine $Dir.TrimEnd($bs)) })
+    if ($On) { $parts += $Dir }
+    $key.SetValue('Path', ($parts -join ';'), [Microsoft.Win32.RegistryValueKind]::ExpandString)
+  } finally { $key.Close() }
+  if ($Announce) { [Environment]::SetEnvironmentVariable('VOIDOS_HOME', $(if ($On) { $Root } else { $null }), 'User') }    # (also tells open windows that the environment changed)
+}
+
 function Stop-RunningVoidOS {
   # A running Void OS keeps its packages' .pyd files locked, which makes pip
   # fail; stop it (only the copy that lives in this folder) before updating.
@@ -380,6 +410,7 @@ if ($Uninstall) {
   $n = Stop-RunningVoidOS; if ($n) { Ok "Stopped Void OS" }
   foreach ($f in @($StartupLnk, $DesktopUrl)) { if (Test-Path $f) { Remove-Item -LiteralPath $f -Force; Ok "Removed $(Split-Path $f -Leaf)" } }
   if (Test-Path $StartMenu) { Remove-Item -LiteralPath $StartMenu -Recurse -Force; Ok 'Removed Start menu entries' }
+  Set-VoidosOnPath $false; Ok 'Removed the voidos command from your PATH'
   if (Get-NetFirewallRule -DisplayName $AppName -ErrorAction SilentlyContinue) {
     try { Start-Process powershell -Verb RunAs -Wait -ArgumentList ('-NoProfile -ExecutionPolicy Bypass -File ' + (Quote-Arg $MyInvocation.MyCommand.Path) + ' -AdminTasks -AdminList firewall-remove') }
     catch { Warn 'Firewall rule left in place (administrator prompt declined)' }
@@ -618,6 +649,12 @@ New-Shortcut (Join-Path $StartMenu "$AppName folder.lnk") $Root '' 1 'Void OS in
 Ok 'Start menu: Start Void OS, Open Void OS, Void OS folder'
 New-UrlShortcut $DesktopUrl $Url
 Ok "Desktop shortcut: $AppName"
+if (Test-FolderOnlyOurs $ScriptsDir) {
+  Set-VoidosOnPath $true
+  Ok 'The voidos command: open a new Command Prompt and type  voidos help  (reset a password, list accounts, check the install)'
+} else {
+  Warn "The voidos command was not put on your PATH: other users of this PC can change files in $ScriptsDir. Run it as  $ScriptsDir\voidos.cmd  instead, or install Void OS in a folder only you can change."
+}
 if ($NoAutostart) { Info 'Start on sign-in skipped (-NoAutostart)'; if (Test-Path $StartupLnk) { Remove-Item -LiteralPath $StartupLnk -Force } }
 else {
   # A Startup-folder shortcut (no admin needed), started minimized. The

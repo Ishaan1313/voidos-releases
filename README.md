@@ -716,6 +716,18 @@ Behind a reverse proxy, set `VOID_TRUST_PROXY_HEADERS=true` so Void OS builds
 alternative if you can't trust proxy headers. A provider without credentials
 simply shows *Not configured*.
 
+### Uploading a file whose name is taken
+
+When you upload (pick, drag in, paste, or a whole folder) a file with the same name as one already in the
+folder, Void OS asks first, with the size and date of both: **Replace**, **Keep both**, **Skip**, or
+**Cancel upload**. *Replace* puts the old file in the Recycle Bin first, so a mistake can be undone (from an
+external drive, where there is no Recycle Bin, the old file is simply replaced); *Keep both* saves the new
+one as `name (1).ext`, `name (2).ext` and so on; *Skip* leaves those files out and uploads the rest. The
+answer applies to every clash in that upload, and a dropped folder asks once for the whole tree. A file
+can't replace a folder of the same name. A file that turns up between the question and the upload is never
+overwritten silently. The phone's "share to Files" always keeps both. Anything that sends no choice
+(another client, an older page) replaces, with the old file in the Recycle Bin.
+
 ### Sync your whole Dropbox
 
 Under a connected Dropbox, press **Start syncing everything**. Void OS keeps a full
@@ -725,6 +737,12 @@ ways, the way the desktop app does:
 - a change on this server (a file added, edited, renamed or deleted) is pushed within
   seconds, and a change in Dropbox, from any device, is pulled within seconds, because
   Dropbox notifies Void OS the moment something changes;
+- an edited file goes up at once, with no quiet period first. A file written in the last
+  couple of seconds is looked at twice, under a second apart, and sent if it did not change;
+  a file that is still being written (a big copy, a recording) waits on its own, 3, 10, 30,
+  then 60 seconds between tries, and nothing else is held back for it. A changed file is
+  sent whole (Dropbox and Google Drive take no partial updates), and the sync list names
+  the big file that is uploading right now;
 - the files are stored here, so the account has to fit: Void OS checks the free space
   before starting and tells you if it doesn't;
 - if both sides change a file, the newer one wins and the other is kept alongside;
@@ -1228,8 +1246,46 @@ person is signed out everywhere and signs in with just their password. If the Su
 User is locked out, run this on the server:
 
 ```
-python voidos.py --reset-2fa <username>
+voidos reset-2fa <username>
 ```
+
+**Forgot the password?** On the server's own terminal the Super User can set a new one
+without turning two-factor off:
+
+```
+voidos reset-password <username>          # asks for the new password twice (or --generate)
+```
+
+If the account has two-factor sign-in, the command also prints a **recovery code**
+(built on the same idea as the custom backup code): it works once, for 24 hours
+(`--hours N` changes that), and only together with the new password. After signing in
+with it the person is asked to make new backup codes, and an unused recovery code
+stops working as soon as they get in some other way. Hand both to them in person.
+`--no-2fa` turns two-factor off instead, and an account that has its own custom backup
+code needs no recovery code. The account is signed out everywhere, and the change is
+in the Activity log and in the person's bell.
+
+### The `voidos` command
+
+On Linux and macOS the installer provides `voidos`; on Windows the installer puts the
+`scripts` folder on your PATH, so a **new** Command Prompt understands it too (or use
+`scripts\voidos.cmd`). Everywhere, `python voidos.py <command>` does the same. These
+run on the server itself, so they are no way in for anyone who only has the web
+address. The server can keep running; run them as the same user that owns the
+`settings` folder (the command does that for you, asking for `sudo` if needed).
+
+| Command | What it does |
+|---|---|
+| `voidos users` | accounts, ranks, open sessions, two-factor state (also flags a secret that can't be read) |
+| `voidos reset-password <user>` | a new password; two-factor stays on with a one-time recovery code (`--no-2fa`, `--generate`, `--hours N`) |
+| `voidos reset-2fa <user>` / `--all` | turn two-factor off for one account or everyone |
+| `voidos unlock` | lift the pauses after wrong passwords or codes, on a running server too |
+| `voidos signout <user>` / `--all` | end sessions |
+| `voidos make-superuser <user>` | hand the Super User title to an Admin (the old one becomes an Admin and is signed out, which also closes their open Terminal) |
+| `voidos reset-terminal-password` | set the Terminal's second password, or `--remove` it (restart to apply) |
+| `voidos doctor` | checks Python, folders, free space, `.env`, the secret key, the Super User, unreadable two-factor secrets, the port and helper programs |
+| `voidos backup [folder]` | a zip of `settings/` and `.env` (private to you: it holds accounts and the secret key) |
+| `voidos start`, `stop`, `restart`, `status`, `logs`, `update` ... | Linux and macOS: run the server (`voidos help`) |
 
 The secret is stored encrypted (see [Security](#security)), so a copy of
 `users.json` can't be used to generate codes; if `VOID_SECRET_KEY` changes, those
@@ -1334,7 +1390,7 @@ What keeps it safe:
 - **The Worker is the only door.** It can only ask for `/site/<id>/...` (so no path a visitor types reaches the dashboard, its API or any other folder), allows
   only GET and HEAD (and the PIN form), strips cookies both ways (except the PIN pass), and proves itself with a secret key; Void OS serves a site to nobody else, so the files are never on the dashboard's
   own address, where a script could act with a signed-in person's cookies. A site's own scripts can only ever reach that site's own folder.
-- **A PIN for visitors (optional).** Switch on *Ask visitors for a PIN* when you make or edit a site and give it a PIN (4 to 64 characters, digits are easiest). Anyone opening the address then sees a PIN page, in the same light and dark look as the rest of Void OS, until they type it. It is modelled on two-factor sign-in: a short code, a few tries (5 wrong ones from one address), then a wait that grows (1, 5, 30, 60 minutes), and an address that is waiting is refused even with the right PIN. If many addresses guess at once, new PIN entries for that site pause for ten minutes. The PIN is kept only as a salted hash (never readable again); a right one gives the visitor a signed pass, kept by the site's Worker as a cookie for that address only (HttpOnly, Secure), for 1 hour, 1 day, 7 days or 30 days as you choose. Setting a new PIN or removing it ends every pass at once. The list says how many visitors are waiting after wrong tries, and **Reset the wait** (in the list, and in the Edit window) lets them try again at once, which also clears the count of wrong tries and any pause for the whole site. Pictures, scripts and every other file are held back too, and are not cached by shared caches. The owner's preview needs no PIN. Wrong guesses are in the Activity log, and the Super User and Admins get a bell notice (and the usual channels, switchable under *Notify me for*) when an address is locked out. The Worker takes only its own cookie, and the one small PIN form, through to Void OS; nothing else a visitor sends.
+- **Website auth (optional).** Switch on *Website auth* when you make or edit a site and give it a PIN of 4 to 6 digits. Anyone opening the address then sees a PIN page until they type it, in the same boxes (with the same spinning ring, shake and check) as the two-factor code of the sign-in, in the same light and dark look as the rest of Void OS; it opens by itself when the last digit is typed. It is modelled on two-factor sign-in: a short code, a few tries (5 wrong ones from one address), then a wait that grows (1, 5, 30, 60 minutes), and an address that is waiting is refused even with the right PIN. If many addresses guess at once, new PIN entries for that site pause for ten minutes. The PIN is kept only as a salted hash (never readable again); a right one gives the visitor a signed pass, kept by the site's Worker as a cookie for that address only (HttpOnly, Secure), for 1 hour, 1 day, 7 days or 30 days as you choose. Setting a new PIN or removing it ends every pass at once. The list says how many visitors are waiting after wrong tries, and **Reset the wait** (in the list, and in the Edit window) lets them try again at once, which also clears the count of wrong tries and any pause for the whole site. Pictures, scripts and every other file are held back too, and are not cached by shared caches. The owner's preview needs no PIN. Wrong guesses are in the Activity log, and the Super User and Admins get a bell notice (and the usual channels, switchable under *Notify me for*) when an address is locked out. The Worker takes only its own cookie, and the one small PIN form, through to Void OS; nothing else a visitor sends.
 - **The owner's preview is sandboxed** (`allow-scripts` without `allow-same-origin`): its scripts run as a page with no origin.
 - **Overload.** Per address, the Worker's Cloudflare Rate Limiting binding allows 120 requests per 10 seconds (if the account lacks the binding, the site still
   goes up and Void OS limits at its end). Void OS also caps requests per address and per site, bytes per site per hour (4 GB) and per address, streams at the same time

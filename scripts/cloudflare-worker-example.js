@@ -117,14 +117,17 @@ export default {
 // A public website (SITE_PREFIX = /site/<id>, SITE_KEY = the secret Void OS made for it). The Worker is the ONLY door to it:
 //   * it can only ever ask for /site/<id>/...: whatever path a visitor types is put behind that prefix, so nobody can reach the dashboard,
 //     its API or any other part of Void OS through a website's address (the URL parser has already resolved ./ and ../ and %2e%2e);
-//   * only GET and HEAD go through (it is a read-only site), and no cookie or Authorization header goes upstream or comes back;
+//   * only GET and HEAD go through (it is a read-only site), plus the one small form of a PIN-protected site (POST /__void-pin). No cookie or Authorization
+//     header goes upstream or comes back, except the PIN pass: the Worker reads ITS OWN cookie (void_pin) and hands it over as X-Void-Pin, and when Void OS
+//     says a PIN was right it makes that cookie itself (HttpOnly, Secure, for this address only). Nothing else a site or a visitor sets is passed on;
 //   * it proves itself to Void OS with SITE_KEY, and Void OS serves a site to nobody else, so the same files are never reachable on the
 //     dashboard's own address, where a script in a page could act with a signed-in person's cookies.
 async function site(request, env) {
-  if (request.method !== "GET" && request.method !== "HEAD") {
+  const incoming = new URL(request.url);
+  const pinForm = request.method === "POST" && incoming.pathname === "/__void-pin";
+  if (request.method !== "GET" && request.method !== "HEAD" && !pinForm) {
     return new Response("This site is read-only.", { status: 405, headers: { Allow: "GET, HEAD", "Content-Type": "text/plain; charset=utf-8" } });
   }
-  const incoming = new URL(request.url);
   if (request.url.length > 2000 || incoming.pathname.split("/").length > 42) {                       // no real page has an address like that
     return new Response("Not found", { status: 414, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
   }
@@ -145,17 +148,32 @@ async function site(request, env) {
     const v = request.headers.get(h);
     if (v) headers.set(h, v);
   }
+  const pass = /(?:^|;\s*)void_pin=([A-Za-z0-9._-]{1,200})/.exec(request.headers.get("Cookie") || "");
+  if (pass) headers.set("X-Void-Pin", pass[1]);                                                       // (only this one cookie, and only as this header)
+  let body;
+  if (pinForm) {                                                                                       // a PIN form is a few characters: nothing larger is passed on
+    if (Number(request.headers.get("Content-Length") || 0) > 2048) return new Response("Too large", { status: 413, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+    body = await request.text();
+    if (body.length > 2048) return new Response("Too large", { status: 413, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+    headers.set("Content-Type", "application/x-www-form-urlencoded");
+  }
   headers.set("X-Void-Site", env.SITE_KEY || "");
   headers.set("X-Void-Client-IP", ip);                                                                // (Void OS believes it only because the key above is right)
   headers.set("X-Forwarded-Host", incoming.host);
   headers.set("X-Forwarded-Proto", incoming.protocol.replace(":", ""));
   let response;
   try {
-    response = await fetch(upstream.toString(), { method: request.method, headers, redirect: "manual", cf: { connectTimeout: 2000 } });
+    response = await fetch(upstream.toString(), { method: request.method, headers, body, redirect: "manual", cf: { connectTimeout: 2000 } });
   } catch (e) { return siteDown(); }
   if (SERVER_DOWN.includes(response.status)) return siteDown();
   const out = new Headers(response.headers);
   out.delete("Set-Cookie");
+  const token = out.get("X-Void-Pin-Token"), age = out.get("X-Void-Pin-Age") || "";
+  out.delete("X-Void-Pin-Token");
+  out.delete("X-Void-Pin-Age");
+  if (pinForm && token && /^[A-Za-z0-9._-]{10,200}$/.test(token) && /^[0-9]{1,8}$/.test(age)) {      // a right PIN: the pass becomes this visitor's cookie
+    out.append("Set-Cookie", "void_pin=" + token + "; Max-Age=" + age + "; Path=/; HttpOnly; Secure; SameSite=Lax");
+  }
   const location = out.get("Location");
   if (location) {                                      // a redirect inside the site: back to the public address, without the prefix
     try {

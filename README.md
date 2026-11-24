@@ -1510,6 +1510,12 @@ in the sidebar, tap the pencil, and pick someone. It looks and works like Telegr
 on a phone), bubbles with tails, ticks that turn blue when the other person has read it, "typing…", unread counts on the
 sidebar button, and new messages that arrive by themselves without a refresh.
 
+- **Who can message whom.** By default everyone can message everyone. The Super User can limit it in **Access Control**: the
+  **Chat…** button on a person's row sets their rule to *Everyone*, *Only some people* (a ticked list) or *Nobody*. Two people can
+  message each other only when **both** of their rules allow it, so a person who has chosen *Nobody* can't be written to either. The
+  Super User is never limited and can always be reached. A person can't start a chat, add someone to a group or send in a direct
+  chat with someone they may not message; chats that already exist stay readable but can't be written in. The people list in Chat
+  only shows the people you may message, and every change is in the audit log.
 - **Profile pictures.** Everyone can set one in **Settings > Account > Profile**; it shows in Chat and in the user list. The file you
   send is never kept: it is opened as a picture, cut to a square, shrunk to 256 pixels and saved again as a brand-new small WebP, so
   no hidden data (GPS position, camera, appended code) survives, and anything that is not really a JPEG, PNG, WebP or GIF (an SVG,
